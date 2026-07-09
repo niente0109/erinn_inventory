@@ -16,11 +16,16 @@ const CONFIG = {
 
 /* ========================================================================= */
 
+// 인벤토리 기본 크기와 확장권 규칙 (마비노기 기준: 기본 가로 6칸, 확장권 1장당 +1칸, 최대 3장까지 = 최대 가로 9칸)
+const INVENTORY_BASE_COLS = 6;
+const INVENTORY_ROWS = 10;
+const INVENTORY_MAX_EXTENSIONS = 3;
+
 const state = {
   bags: [],          // 시트/백업에서 읽은 전체 가방 목록
-  filtered: [],       // 검색/필터/정렬이 적용된 목록 (화면에 실제로 그려지는 목록)
-  cols: 4,
-  rows: 6,
+  cols: INVENTORY_BASE_COLS,
+  rows: INVENTORY_ROWS,
+  extCount: 0,        // 사용한 인벤토리 확장권 개수 (0~3)
   cellPx: 0,          // 현재 화면에서 셀 1개의 실제 픽셀 크기 (드래그 좌표 계산용)
   placements: [],     // { id, bag, x, y }
   selectedBagKey: null, // 클릭-배치 모드에서 선택된 카드의 key
@@ -36,8 +41,9 @@ const el = {
   typeFilters: document.getElementById("type-filters"),
   sort: document.getElementById("sort-select"),
   catalogList: document.getElementById("catalog-list"),
-  colsInput: document.getElementById("cols-input"),
-  rowsInput: document.getElementById("rows-input"),
+  extInput: document.getElementById("ext-input"),
+  gridSizeLabel: document.getElementById("grid-size-label"),
+  placeMessage: document.getElementById("place-message"),
   clearBtn: document.getElementById("clear-btn"),
   grid: document.getElementById("grid"),
   summaryCount: document.getElementById("summary-count"),
@@ -131,6 +137,7 @@ function csvToBags(text) {
     in_w: idx(["in_w", "inw"]),
     in_h: idx(["in_h", "inh"]),
     image: idx(["image_url", "image", "img", "imageurl", "이미지"]),
+    unique: idx(["unique", "no_duplicate", "중복불가", "중복소지불가", "dup_limit"]),
   };
 
   if (col.name === -1 || col.out_w === -1 || col.out_h === -1 || col.in_w === -1 || col.in_h === -1) {
@@ -154,9 +161,16 @@ function csvToBags(text) {
       name,
       out_w, out_h, in_w, in_h,
       image_url: col.image !== -1 ? (row[col.image] || "").trim() : "",
+      unique: col.unique !== -1 ? isTruthy(row[col.unique]) : false,
     });
   }
   return bags;
+}
+
+// "Y", "TRUE", "1", "중복불가" 등 다양한 표기를 참(true)으로 인식
+function isTruthy(v) {
+  const s = (v || "").trim().toLowerCase();
+  return ["y", "yes", "true", "1", "o", "중복불가", "불가", "unique"].includes(s);
 }
 
 /* ------------------------------ 카탈로그(목록) ------------------------------ */
@@ -225,9 +239,13 @@ function renderCatalog() {
   }
 
   list.forEach(({ bag, key }) => {
+    const alreadyPlaced = bag.unique && state.placements.some(p => p.bag.name === bag.name);
+
     const card = document.createElement("div");
-    card.className = "bag-card" + (state.selectedBagKey === key ? " selected" : "");
-    card.draggable = true;
+    card.className = "bag-card"
+      + (state.selectedBagKey === key ? " selected" : "")
+      + (alreadyPlaced ? " disabled" : "");
+    card.draggable = !alreadyPlaced;
     card.dataset.key = key;
 
     const thumb = document.createElement("div");
@@ -255,14 +273,25 @@ function renderCatalog() {
 
     card.appendChild(thumb);
     card.appendChild(info);
+    if (bag.unique) {
+      const uniqueBadge = document.createElement("span");
+      uniqueBadge.className = "unique-badge";
+      uniqueBadge.textContent = "중복불가";
+      card.appendChild(uniqueBadge);
+    }
     card.appendChild(badge);
 
     card.addEventListener("click", () => {
+      if (alreadyPlaced) {
+        showMessage(`"${bag.name}"은(는) 중복 소지가 불가능해서 이미 배치된 것 외에는 추가할 수 없어요.`);
+        return;
+      }
       state.selectedBagKey = (state.selectedBagKey === key) ? null : key;
       renderCatalog();
     });
 
     card.addEventListener("dragstart", (e) => {
+      if (alreadyPlaced) { e.preventDefault(); return; }
       e.dataTransfer.setData("text/plain", key);
       state.selectedBagKey = key;
     });
@@ -284,20 +313,21 @@ function findBagByKey(key) {
 
 /* -------------------------------- 그리드 -------------------------------- */
 
-function initGridControls() {
-  el.colsInput.value = state.cols;
-  el.rowsInput.value = state.rows;
+function applyExtensionCount() {
+  state.cols = INVENTORY_BASE_COLS + state.extCount;
+  state.rows = INVENTORY_ROWS;
+  el.gridSizeLabel.textContent = `${state.cols} × ${state.rows}칸` +
+    (state.extCount > 0 ? ` (확장권 ${state.extCount}장 사용)` : "");
+}
 
-  el.colsInput.addEventListener("change", () => {
-    state.cols = clamp(parseInt(el.colsInput.value, 10) || 1, 1, 30);
-    el.colsInput.value = state.cols;
-    pruneOutOfBoundsPlacements();
-    renderGrid();
-    saveState();
-  });
-  el.rowsInput.addEventListener("change", () => {
-    state.rows = clamp(parseInt(el.rowsInput.value, 10) || 1, 1, 30);
-    el.rowsInput.value = state.rows;
+function initGridControls() {
+  el.extInput.value = state.extCount;
+  applyExtensionCount();
+
+  el.extInput.addEventListener("change", () => {
+    state.extCount = clamp(parseInt(el.extInput.value, 10) || 0, 0, INVENTORY_MAX_EXTENSIONS);
+    el.extInput.value = state.extCount;
+    applyExtensionCount();
     pruneOutOfBoundsPlacements();
     renderGrid();
     saveState();
@@ -352,6 +382,7 @@ function renderGrid() {
 
   requestAnimationFrame(measureCellPx);
   renderSummary();
+  renderCatalog(); // 배치 상태가 바뀌면 "중복불가" 카드의 비활성 표시도 갱신
 }
 
 function makePlacedBagEl(p) {
@@ -478,14 +509,27 @@ function clearDragPreview() {
 }
 
 function tryPlaceBag(bag, x, y) {
+  if (bag.unique && state.placements.some(p => p.bag.name === bag.name)) {
+    showMessage(`"${bag.name}"은(는) 중복 소지가 불가능한 가방이라 1개만 배치할 수 있어요.`);
+    return false;
+  }
   if (!cellFree(x, y, bag.out_w, bag.out_h)) {
     flashInvalid(x, y, bag);
+    showMessage("이미 다른 가방이 있거나 인벤토리 범위를 벗어나서 배치할 수 없어요.");
     return false;
   }
   state.placements.push({ id: state.nextId++, bag, x, y });
   renderGrid();
   saveState();
   return true;
+}
+
+let messageTimer = null;
+function showMessage(text) {
+  el.placeMessage.textContent = text;
+  el.placeMessage.classList.add("show");
+  clearTimeout(messageTimer);
+  messageTimer = setTimeout(() => el.placeMessage.classList.remove("show"), 2600);
 }
 
 function flashInvalid(x, y, bag) {
@@ -504,8 +548,7 @@ const STORAGE_KEY = "mabinogi-bag-sim-state-v1";
 function saveState() {
   try {
     const data = {
-      cols: state.cols,
-      rows: state.rows,
+      extCount: state.extCount,
       placements: state.placements.map(p => ({ name: p.bag.name, x: p.x, y: p.y })),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -519,10 +562,9 @@ function restoreState() {
   } catch (e) { saved = null; }
   if (!saved) return;
 
-  state.cols = clamp(saved.cols || state.cols, 1, 30);
-  state.rows = clamp(saved.rows || state.rows, 1, 30);
-  el.colsInput.value = state.cols;
-  el.rowsInput.value = state.rows;
+  state.extCount = clamp(saved.extCount || 0, 0, INVENTORY_MAX_EXTENSIONS);
+  el.extInput.value = state.extCount;
+  applyExtensionCount();
 
   (saved.placements || []).forEach(sp => {
     const bag = state.bags.find(b => b.name === sp.name);

@@ -37,14 +37,13 @@
 
   <main class="board-panel">
     <div class="board-toolbar">
-      <label>가로 칸 수
-        <input id="cols-input" type="number" min="1" max="30" value="4">
-      </label>
-      <label>세로 칸 수
-        <input id="rows-input" type="number" min="1" max="30" value="6">
+      <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
+      <label>인벤토리 확장권 사용 개수 (0~3)
+        <input id="ext-input" type="number" min="0" max="3" value="0">
       </label>
       <button id="clear-btn" class="danger-btn">전체 초기화</button>
     </div>
+    <p id="place-message" class="place-message"></p>
 
     <div class="board-wrapper">
       <div id="grid" class="grid"></div>
@@ -56,7 +55,7 @@
         <span id="summary-count" class="summary-value">0개</span>
       </div>
       <div class="summary-item">
-        <span class="summary-label">사용 중인 장착 칸</span>
+        <span class="summary-label">사용 중인 인벤토리 칸</span>
         <span id="summary-cells" class="summary-value">0 / 0</span>
       </div>
       <div class="summary-item highlight">
