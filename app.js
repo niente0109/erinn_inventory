@@ -1,0 +1,560 @@
+/* =========================================================================
+   마비노기 가방 배치 시뮬레이터
+   -------------------------------------------------------------------------
+   이 파일에서 직접 수정하면 되는 부분은 아래 CONFIG 블록뿐입니다.
+   나머지 코드는 그대로 두셔도 됩니다.
+   ========================================================================= */
+
+const CONFIG = {
+  // 구글 시트 주소창의 /d/ 뒤, /edit 앞에 있는 긴 문자열입니다.
+  SHEET_ID: "1TzVtBFSy-WzCCid-3BfMlwhEszP7bBT-CI8fFDcYh-0",
+  // 실제 데이터가 있는 시트(탭) 이름입니다. 하단 탭 이름을 그대로 적으면 됩니다.
+  SHEET_NAME: "시트1",
+  // 시트 연결에 실패했을 때 대신 사용할 로컬 백업 데이터 파일입니다.
+  FALLBACK_URL: "data/bags.json",
+};
+
+/* ========================================================================= */
+
+const state = {
+  bags: [],          // 시트/백업에서 읽은 전체 가방 목록
+  filtered: [],       // 검색/필터/정렬이 적용된 목록 (화면에 실제로 그려지는 목록)
+  cols: 4,
+  rows: 6,
+  cellPx: 0,          // 현재 화면에서 셀 1개의 실제 픽셀 크기 (드래그 좌표 계산용)
+  placements: [],     // { id, bag, x, y }
+  selectedBagKey: null, // 클릭-배치 모드에서 선택된 카드의 key
+  nextId: 1,
+  typeFilter: "전체",
+  searchText: "",
+  sortMode: "name",
+};
+
+const el = {
+  status: document.getElementById("data-status"),
+  search: document.getElementById("search-input"),
+  typeFilters: document.getElementById("type-filters"),
+  sort: document.getElementById("sort-select"),
+  catalogList: document.getElementById("catalog-list"),
+  colsInput: document.getElementById("cols-input"),
+  rowsInput: document.getElementById("rows-input"),
+  clearBtn: document.getElementById("clear-btn"),
+  grid: document.getElementById("grid"),
+  summaryCount: document.getElementById("summary-count"),
+  summaryCells: document.getElementById("summary-cells"),
+  summaryCapacity: document.getElementById("summary-capacity"),
+};
+
+/* ---------------------------- 데이터 불러오기 ---------------------------- */
+
+async function loadBags() {
+  const sheetUrl =
+    `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=` +
+    encodeURIComponent(CONFIG.SHEET_NAME);
+
+  try {
+    const res = await fetch(sheetUrl);
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    const parsed = csvToBags(text);
+    if (parsed.length === 0) throw new Error("파싱된 가방이 없습니다");
+    state.bags = parsed;
+    setStatus(`구글 시트에서 데이터를 불러왔습니다 (${parsed.length}개 가방).`, "ok");
+  } catch (err) {
+    console.warn("시트 연결 실패, 백업 데이터로 전환합니다:", err);
+    try {
+      const res2 = await fetch(CONFIG.FALLBACK_URL);
+      state.bags = await res2.json();
+      setStatus(
+        `구글 시트 연결에 실패해 저장된 백업 데이터를 사용 중입니다 (${state.bags.length}개 가방). ` +
+        `시트가 "링크가 있는 모든 사용자에게 보기"로 공개되어 있는지 확인해보세요.`,
+        "warn"
+      );
+    } catch (err2) {
+      console.error(err2);
+      setStatus("가방 데이터를 불러오지 못했습니다. 인터넷 연결 또는 시트 설정을 확인해주세요.", "error");
+      state.bags = [];
+    }
+  }
+}
+
+function setStatus(msg, kind) {
+  el.status.textContent = msg;
+  el.status.className = "data-status " + (kind || "");
+}
+
+// 아주 단순한 CSV 파서 (따옴표로 감싼 값 안의 쉼표/줄바꿈까지 처리)
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { row.push(field); field = ""; }
+      else if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; }
+      else if (c === "\r") { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+// 헤더 이름을 기준으로 가방 목록을 구성합니다. (열 순서가 바뀌어도 안전하게 동작)
+function csvToBags(text) {
+  const rows = parseCSV(text).filter(r => r.some(c => c.trim() !== ""));
+  if (rows.length < 2) return [];
+
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  const idx = (names) => {
+    for (const n of names) {
+      const i = header.indexOf(n);
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
+
+  const col = {
+    type: idx(["type", "타입", "분류"]),
+    name: idx(["name", "이름"]),
+    out_w: idx(["out_w", "outw"]),
+    out_h: idx(["out_h", "outh"]),
+    in_w: idx(["in_w", "inw"]),
+    in_h: idx(["in_h", "inh"]),
+    image: idx(["image_url", "image", "img", "imageurl", "이미지"]),
+  };
+
+  if (col.name === -1 || col.out_w === -1 || col.out_h === -1 || col.in_w === -1 || col.in_h === -1) {
+    return [];
+  }
+
+  const bags = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    const name = (row[col.name] || "").trim();
+    if (!name) continue;
+
+    const out_w = parseInt(row[col.out_w], 10);
+    const out_h = parseInt(row[col.out_h], 10);
+    const in_w = parseInt(row[col.in_w], 10);
+    const in_h = parseInt(row[col.in_h], 10);
+    if ([out_w, out_h, in_w, in_h].some(n => !Number.isFinite(n) || n <= 0)) continue;
+
+    bags.push({
+      type: col.type !== -1 ? (row[col.type] || "").trim() || "기타" : "기타",
+      name,
+      out_w, out_h, in_w, in_h,
+      image_url: col.image !== -1 ? (row[col.image] || "").trim() : "",
+    });
+  }
+  return bags;
+}
+
+/* ------------------------------ 카탈로그(목록) ------------------------------ */
+
+function bagKey(bag, i) {
+  return bag.name + "__" + i;
+}
+
+const TYPE_COLORS = {
+  "인형": "var(--type-doll)",
+  "일반": "var(--type-normal)",
+};
+function typeColor(type) {
+  return TYPE_COLORS[type] || "var(--type-other)";
+}
+
+function renderTypeFilters() {
+  const types = ["전체", ...new Set(state.bags.map(b => b.type))];
+  el.typeFilters.innerHTML = "";
+  types.forEach(t => {
+    const btn = document.createElement("button");
+    btn.className = "type-filter-btn" + (t === state.typeFilter ? " active" : "");
+    btn.textContent = t;
+    btn.addEventListener("click", () => {
+      state.typeFilter = t;
+      renderTypeFilters();
+      renderCatalog();
+    });
+    el.typeFilters.appendChild(btn);
+  });
+}
+
+function getFilteredSortedBags() {
+  let list = state.bags.map((b, i) => ({ bag: b, key: bagKey(b, i) }));
+
+  if (state.typeFilter !== "전체") {
+    list = list.filter(({ bag }) => bag.type === state.typeFilter);
+  }
+  if (state.searchText.trim()) {
+    const q = state.searchText.trim().toLowerCase();
+    list = list.filter(({ bag }) => bag.name.toLowerCase().includes(q));
+  }
+
+  const cmp = {
+    "name": (a, b) => a.bag.name.localeCompare(b.bag.name, "ko"),
+    "out-desc": (a, b) => (b.bag.out_w * b.bag.out_h) - (a.bag.out_w * a.bag.out_h),
+    "out-asc": (a, b) => (a.bag.out_w * a.bag.out_h) - (b.bag.out_w * b.bag.out_h),
+    "in-desc": (a, b) => (b.bag.in_w * b.bag.in_h) - (a.bag.in_w * a.bag.in_h),
+    "in-asc": (a, b) => (a.bag.in_w * a.bag.in_h) - (b.bag.in_w * b.bag.in_h),
+  }[state.sortMode] || (() => 0);
+
+  list.sort(cmp);
+  return list;
+}
+
+function renderCatalog() {
+  const list = getFilteredSortedBags();
+  el.catalogList.innerHTML = "";
+
+  if (list.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "hint";
+    empty.textContent = "조건에 맞는 가방이 없습니다.";
+    el.catalogList.appendChild(empty);
+    return;
+  }
+
+  list.forEach(({ bag, key }) => {
+    const card = document.createElement("div");
+    card.className = "bag-card" + (state.selectedBagKey === key ? " selected" : "");
+    card.draggable = true;
+    card.dataset.key = key;
+
+    const thumb = document.createElement("div");
+    thumb.className = "bag-thumb";
+    if (bag.image_url) {
+      thumb.style.backgroundImage = `url("${bag.image_url}")`;
+    } else {
+      thumb.textContent = `${bag.out_w}×${bag.out_h}`;
+    }
+
+    const info = document.createElement("div");
+    info.className = "bag-info";
+    info.innerHTML = `
+      <div class="bag-name" title="${escapeHtml(bag.name)}">${escapeHtml(bag.name)}</div>
+      <div class="bag-meta">
+        <span>배치 ${bag.out_w}×${bag.out_h}</span>
+        <span>내부 ${bag.in_w}×${bag.in_h} (${bag.in_w * bag.in_h}칸)</span>
+      </div>
+    `;
+
+    const badge = document.createElement("span");
+    badge.className = "type-badge";
+    badge.style.background = typeColor(bag.type);
+    badge.textContent = bag.type;
+
+    card.appendChild(thumb);
+    card.appendChild(info);
+    card.appendChild(badge);
+
+    card.addEventListener("click", () => {
+      state.selectedBagKey = (state.selectedBagKey === key) ? null : key;
+      renderCatalog();
+    });
+
+    card.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/plain", key);
+      state.selectedBagKey = key;
+    });
+
+    el.catalogList.appendChild(card);
+  });
+}
+
+function escapeHtml(str) {
+  const d = document.createElement("div");
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function findBagByKey(key) {
+  const idx = parseInt(key.split("__").pop(), 10);
+  return state.bags[idx] || null;
+}
+
+/* -------------------------------- 그리드 -------------------------------- */
+
+function initGridControls() {
+  el.colsInput.value = state.cols;
+  el.rowsInput.value = state.rows;
+
+  el.colsInput.addEventListener("change", () => {
+    state.cols = clamp(parseInt(el.colsInput.value, 10) || 1, 1, 30);
+    el.colsInput.value = state.cols;
+    pruneOutOfBoundsPlacements();
+    renderGrid();
+    saveState();
+  });
+  el.rowsInput.addEventListener("change", () => {
+    state.rows = clamp(parseInt(el.rowsInput.value, 10) || 1, 1, 30);
+    el.rowsInput.value = state.rows;
+    pruneOutOfBoundsPlacements();
+    renderGrid();
+    saveState();
+  });
+
+  el.clearBtn.addEventListener("click", () => {
+    if (state.placements.length === 0) return;
+    if (confirm("배치된 모든 가방을 지우시겠어요?")) {
+      state.placements = [];
+      renderGrid();
+      saveState();
+    }
+  });
+}
+
+function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
+
+function pruneOutOfBoundsPlacements() {
+  state.placements = state.placements.filter(
+    p => p.x + p.bag.out_w <= state.cols && p.y + p.bag.out_h <= state.rows
+  );
+}
+
+function cellFree(x, y, w, h, ignoreId) {
+  if (x < 0 || y < 0 || x + w > state.cols || y + h > state.rows) return false;
+  for (const p of state.placements) {
+    if (p.id === ignoreId) continue;
+    const overlap = x < p.x + p.bag.out_w && x + w > p.x && y < p.y + p.bag.out_h && y + h > p.y;
+    if (overlap) return false;
+  }
+  return true;
+}
+
+function renderGrid() {
+  el.grid.style.setProperty("--cols", state.cols);
+  el.grid.style.setProperty("--rows", state.rows);
+  el.grid.innerHTML = "";
+
+  for (let y = 0; y < state.rows; y++) {
+    for (let x = 0; x < state.cols; x++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+      el.grid.appendChild(cell);
+    }
+  }
+
+  state.placements.forEach(p => {
+    el.grid.appendChild(makePlacedBagEl(p));
+  });
+
+  requestAnimationFrame(measureCellPx);
+  renderSummary();
+}
+
+function makePlacedBagEl(p) {
+  const div = document.createElement("div");
+  div.className = "placed-bag";
+  div.style.gridColumn = `${p.x + 1} / span ${p.bag.out_w}`;
+  div.style.gridRow = `${p.y + 1} / span ${p.bag.out_h}`;
+  div.style.background = typeColor(p.bag.type);
+  if (p.bag.image_url) {
+    div.style.backgroundImage = `url("${p.bag.image_url}")`;
+    div.style.backgroundSize = "cover";
+    div.style.backgroundPosition = "center";
+  }
+  div.title = `${p.bag.name} (내부 ${p.bag.in_w}×${p.bag.in_h})`;
+  div.textContent = p.bag.name;
+
+  const removeBtn = document.createElement("span");
+  removeBtn.className = "remove-btn";
+  removeBtn.textContent = "×";
+  removeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    state.placements = state.placements.filter(pl => pl.id !== p.id);
+    renderGrid();
+    saveState();
+  });
+  div.appendChild(removeBtn);
+
+  return div;
+}
+
+function measureCellPx() {
+  const rect = el.grid.getBoundingClientRect();
+  state.cellPx = {
+    w: rect.width / state.cols,
+    h: rect.height / state.rows,
+    left: rect.left,
+    top: rect.top,
+  };
+}
+
+function renderSummary() {
+  const count = state.placements.length;
+  const occupied = state.placements.reduce((s, p) => s + p.bag.out_w * p.bag.out_h, 0);
+  const capacity = state.placements.reduce((s, p) => s + p.bag.in_w * p.bag.in_h, 0);
+
+  el.summaryCount.textContent = `${count}개`;
+  el.summaryCells.textContent = `${occupied} / ${state.cols * state.rows}`;
+  el.summaryCapacity.textContent = `${capacity.toLocaleString()}칸`;
+}
+
+/* --------------------------- 배치 (드래그 & 클릭) --------------------------- */
+
+let dragPreviewEl = null;
+
+function setupGridInteractions() {
+  el.grid.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    const key = state.selectedBagKey;
+    if (!key) return;
+    const bag = findBagByKey(key);
+    if (!bag) return;
+
+    const { x, y } = pointerToCell(e.clientX, e.clientY, bag.out_w, bag.out_h);
+    showDragPreview(x, y, bag);
+  });
+
+  el.grid.addEventListener("dragleave", (e) => {
+    if (e.target === el.grid) clearDragPreview();
+  });
+
+  el.grid.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const key = e.dataTransfer.getData("text/plain") || state.selectedBagKey;
+    clearDragPreview();
+    if (!key) return;
+    const bag = findBagByKey(key);
+    if (!bag) return;
+
+    const { x, y } = pointerToCell(e.clientX, e.clientY, bag.out_w, bag.out_h);
+    tryPlaceBag(bag, x, y);
+  });
+
+  // 클릭(탭)으로 배치하는 모드 - 모바일 등 드래그가 불편한 환경 대응
+  el.grid.addEventListener("click", (e) => {
+    const cellEl = e.target.closest(".cell");
+    if (!cellEl) return;
+    const key = state.selectedBagKey;
+    if (!key) return;
+    const bag = findBagByKey(key);
+    if (!bag) return;
+
+    const x = parseInt(cellEl.dataset.x, 10);
+    const y = parseInt(cellEl.dataset.y, 10);
+    tryPlaceBag(bag, x, y);
+  });
+}
+
+function pointerToCell(clientX, clientY, w, h) {
+  if (!state.cellPx || !state.cellPx.w) measureCellPx();
+  const { left, top, w: cw, h: ch } = state.cellPx;
+  let x = Math.floor((clientX - left) / cw);
+  let y = Math.floor((clientY - top) / ch);
+  x = clamp(x, 0, Math.max(0, state.cols - w));
+  y = clamp(y, 0, Math.max(0, state.rows - h));
+  return { x, y };
+}
+
+function showDragPreview(x, y, bag) {
+  clearDragPreview();
+  const valid = cellFree(x, y, bag.out_w, bag.out_h);
+  const div = document.createElement("div");
+  div.className = "drag-preview" + (valid ? "" : " invalid");
+  div.style.gridColumn = `${x + 1} / span ${bag.out_w}`;
+  div.style.gridRow = `${y + 1} / span ${bag.out_h}`;
+  el.grid.appendChild(div);
+  dragPreviewEl = div;
+}
+
+function clearDragPreview() {
+  if (dragPreviewEl) {
+    dragPreviewEl.remove();
+    dragPreviewEl = null;
+  }
+}
+
+function tryPlaceBag(bag, x, y) {
+  if (!cellFree(x, y, bag.out_w, bag.out_h)) {
+    flashInvalid(x, y, bag);
+    return false;
+  }
+  state.placements.push({ id: state.nextId++, bag, x, y });
+  renderGrid();
+  saveState();
+  return true;
+}
+
+function flashInvalid(x, y, bag) {
+  const div = document.createElement("div");
+  div.className = "drag-preview invalid";
+  div.style.gridColumn = `${x + 1} / span ${bag.out_w}`;
+  div.style.gridRow = `${y + 1} / span ${bag.out_h}`;
+  el.grid.appendChild(div);
+  setTimeout(() => div.remove(), 260);
+}
+
+/* ------------------------------ 상태 저장/복원 ------------------------------ */
+
+const STORAGE_KEY = "mabinogi-bag-sim-state-v1";
+
+function saveState() {
+  try {
+    const data = {
+      cols: state.cols,
+      rows: state.rows,
+      placements: state.placements.map(p => ({ name: p.bag.name, x: p.x, y: p.y })),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) { /* localStorage 사용 불가 환경이면 조용히 무시 */ }
+}
+
+function restoreState() {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+  } catch (e) { saved = null; }
+  if (!saved) return;
+
+  state.cols = clamp(saved.cols || state.cols, 1, 30);
+  state.rows = clamp(saved.rows || state.rows, 1, 30);
+  el.colsInput.value = state.cols;
+  el.rowsInput.value = state.rows;
+
+  (saved.placements || []).forEach(sp => {
+    const bag = state.bags.find(b => b.name === sp.name);
+    if (!bag) return;
+    if (cellFree(sp.x, sp.y, bag.out_w, bag.out_h)) {
+      state.placements.push({ id: state.nextId++, bag, x: sp.x, y: sp.y });
+    }
+  });
+}
+
+/* ---------------------------------- 시작 ---------------------------------- */
+
+async function init() {
+  initGridControls();
+  setupGridInteractions();
+
+  el.search.addEventListener("input", () => {
+    state.searchText = el.search.value;
+    renderCatalog();
+  });
+  el.sort.addEventListener("change", () => {
+    state.sortMode = el.sort.value;
+    renderCatalog();
+  });
+
+  window.addEventListener("resize", () => requestAnimationFrame(measureCellPx));
+
+  await loadBags();
+  renderTypeFilters();
+  renderCatalog();
+  restoreState();
+  renderGrid();
+}
+
+init();

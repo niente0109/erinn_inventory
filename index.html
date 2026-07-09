@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마비노기 가방 배치 시뮬레이터</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <h1><span class="rune">⚔</span> 가방 배치 시뮬레이터 <span class="rune">⚔</span></h1>
+  <p class="subtitle">보유한(또는 원하는) 가방을 장착 그리드에 배치하고, 총 내부 용량을 확인해보세요.</p>
+  <p id="data-status" class="data-status">데이터를 불러오는 중...</p>
+</header>
+
+<div class="layout">
+
+  <aside class="catalog-panel">
+    <div class="catalog-controls">
+      <input id="search-input" type="text" placeholder="가방 이름 검색..." autocomplete="off">
+      <div id="type-filters" class="type-filters"></div>
+      <select id="sort-select">
+        <option value="name">이름순</option>
+        <option value="out-desc">배치 크기 큰 순</option>
+        <option value="out-asc">배치 크기 작은 순</option>
+        <option value="in-desc">내부 용량 큰 순</option>
+        <option value="in-asc">내부 용량 작은 순</option>
+      </select>
+    </div>
+    <p class="hint">카드를 그리드로 드래그하거나, 카드를 탭한 뒤 그리드 칸을 탭해서 배치하세요.</p>
+    <div id="catalog-list" class="catalog-list"></div>
+  </aside>
+
+  <main class="board-panel">
+    <div class="board-toolbar">
+      <label>가로 칸 수
+        <input id="cols-input" type="number" min="1" max="30" value="4">
+      </label>
+      <label>세로 칸 수
+        <input id="rows-input" type="number" min="1" max="30" value="6">
+      </label>
+      <button id="clear-btn" class="danger-btn">전체 초기화</button>
+    </div>
+
+    <div class="board-wrapper">
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <div class="summary-panel">
+      <div class="summary-item">
+        <span class="summary-label">배치된 가방</span>
+        <span id="summary-count" class="summary-value">0개</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">사용 중인 장착 칸</span>
+        <span id="summary-cells" class="summary-value">0 / 0</span>
+      </div>
+      <div class="summary-item highlight">
+        <span class="summary-label">총 내부 용량 합계</span>
+        <span id="summary-capacity" class="summary-value">0칸</span>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<footer class="app-footer">
+  가방 데이터 출처: Google Sheets 연동 · 이 페이지는 정적 파일로만 동작하며 별도 서버가 필요하지 않습니다.
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
