@@ -22,16 +22,16 @@ const INVENTORY_ROWS = 10;
 const INVENTORY_MAX_EXTENSIONS = 3;
 
 const state = {
-  bags: [],          // 시트/백업에서 읽은 전체 가방 목록
+  bags: [],
   cols: INVENTORY_BASE_COLS,
   rows: INVENTORY_ROWS,
-  extCount: 0,        // 사용한 인벤토리 확장권 개수 (0~3)
-  cellPx: 0,          // 현재 화면에서 셀 1개의 실제 픽셀 크기 (드래그 좌표 계산용)
-  placements: [],     // { id, bag, x, y }
-  selectedBagKey: null, // 클릭-배치 모드에서 선택된 카드의 key
+  extCount: 0,
+  cellPx: 0,
+  placements: [],
+  selectedBagKey: null,
   nextId: 1,
   typeFilter: "전체",
-  tagFilters: new Set(), // 선택된 목적별 태그 (다중 선택, 비어있으면 전체 표시)
+  tagFilters: new Set(),
   searchText: "",
   sortMode: "name",
 };
@@ -91,7 +91,6 @@ function setStatus(msg, kind) {
   el.status.className = "data-status " + (kind || "");
 }
 
-// 아주 단순한 CSV 파서 (따옴표로 감싼 값 안의 쉼표/줄바꿈까지 처리)
 function parseCSV(text) {
   const rows = [];
   let row = [];
@@ -117,7 +116,6 @@ function parseCSV(text) {
   return rows;
 }
 
-// 헤더 이름을 기준으로 가방 목록을 구성합니다. (열 순서가 바뀌어도 안전하게 동작)
 function csvToBags(text) {
   const rows = parseCSV(text).filter(r => r.some(c => c.trim() !== ""));
   if (rows.length < 2) return [];
@@ -171,13 +169,11 @@ function csvToBags(text) {
   return bags;
 }
 
-// "이벤트,계절/한정" 처럼 쉼표/슬래시/세미콜론/파이프로 구분된 값을 배열로 변환
 function splitTags(v) {
   if (!v) return [];
   return v.split(/[,/;|]/).map(s => s.trim()).filter(Boolean);
 }
 
-// "Y", "TRUE", "1", "중복불가" 등 다양한 표기를 참(true)으로 인식
 function isTruthy(v) {
   const s = (v || "").trim().toLowerCase();
   return ["y", "yes", "true", "1", "o", "중복불가", "불가", "unique"].includes(s);
@@ -424,7 +420,7 @@ function renderGrid() {
 
   requestAnimationFrame(measureCellPx);
   renderSummary();
-  renderCatalog(); // 배치 상태가 바뀌면 "중복불가" 카드의 비활성 표시도 갱신
+  renderCatalog();
 }
 
 function makePlacedBagEl(p) {
@@ -507,7 +503,6 @@ function setupGridInteractions() {
     tryPlaceBag(bag, x, y);
   });
 
-  // 클릭(탭)으로 배치하는 모드 - 모바일 등 드래그가 불편한 환경 대응
   el.grid.addEventListener("click", (e) => {
     const cellEl = e.target.closest(".cell");
     if (!cellEl) return;
@@ -594,7 +589,7 @@ function saveState() {
       placements: state.placements.map(p => ({ name: p.bag.name, x: p.x, y: p.y })),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) { /* localStorage 사용 불가 환경이면 조용히 무시 */ }
+  } catch (e) { /* 무시 */ }
 }
 
 function restoreState() {
@@ -622,7 +617,6 @@ function restoreState() {
 const THEME_STORAGE_KEY = "mabinogi-bag-sim-theme-v1";
 const DEFAULT_THEME = { name: "블루(기본)", base: "#1c2a38", highlight: "#4fa3d9", shadow: "#0d151c" };
 
-// 인게임 UI 색상 팔레트 14종 (스크린샷 참고, 정확한 픽셀값이 아니라 톤을 재현한 근사치입니다)
 const THEME_PRESETS = [
   { name: "블루(기본)",   base: "#1c2a38", highlight: "#4fa3d9", shadow: "#0d151c" },
   { name: "블랙/스틸",    base: "#22262b", highlight: "#9aa5b1", shadow: "#101214" },
@@ -694,7 +688,7 @@ function setupThemeControls() {
 
   const onManualChange = () => {
     const theme = {
-      name: null, // 직접 입력한 값은 프리셋과 매칭되지 않으므로 이름 없음
+      name: null,
       base: themeEl.base.value, highlight: themeEl.highlight.value, shadow: themeEl.shadow.value,
     };
     applyTheme(theme);
@@ -720,13 +714,12 @@ function setupThemeControls() {
 
 const FONT_STORAGE_KEY = "mabinogi-bag-sim-font-v1";
 
-// TODO: fonts/ 폴더에 실제 폰트 3개를 올리고 style.css 상단의 @font-face 주석을 해제하면
-// 아래 CustomFont1~3 이름이 그대로 적용됩니다.
+// fonts/ 폴더의 실제 폰트 3개를 style.css의 @font-face에서 CustomFont1~3으로 연결해두었습니다.
 const FONT_PRESETS = [
   { key: "default", label: "기본 (Cinzel / Noto Sans KR)", display: '"Cinzel", serif', body: '"Noto Sans KR", sans-serif' },
   { key: "font1", label: "나눔고딕", display: '"CustomFont1", serif', body: '"CustomFont1", sans-serif' },
   { key: "font2", label: "마비옛체", display: '"CustomFont2", serif', body: '"CustomFont2", sans-serif' },
-  { key: "font3", label: "모나S12", display: '"CustomFont3", serif', body: '"CustomFont3", sans-serif' },
+  { key: "font3", label: "MonaS12(도트)", display: '"CustomFont3", serif', body: '"CustomFont3", sans-serif' },
 ];
 
 let currentFontKey = "default";
@@ -760,20 +753,22 @@ function setupFontControls() {
   applyFont(FONT_PRESETS.find(p => p.key === savedKey) || FONT_PRESETS[0]);
 }
 
-/* ------------------------------ 설정 패널: 열기/닫기 ------------------------------ */
+/* ------------------------------ 설정 패널: 열기/닫기 (서랍형) ------------------------------ */
 
 function setupSettingsPanel() {
   const panel = document.getElementById("settings-panel");
   const btn = document.getElementById("settings-btn");
   const closeBtn = document.getElementById("settings-close-btn");
 
-  btn.addEventListener("click", () => panel.classList.toggle("hidden"));
-  closeBtn.addEventListener("click", () => panel.classList.add("hidden"));
+  // "hidden"(display:none) 대신 "open" 클래스로 transform을 토글합니다.
+  // display:none은 트랜지션이 안 걸리기 때문에, 항상 렌더링해두고 화면 밖으로 밀어두는 방식입니다.
+  btn.addEventListener("click", () => panel.classList.toggle("open"));
+  closeBtn.addEventListener("click", () => panel.classList.remove("open"));
 
   document.addEventListener("click", (e) => {
-    if (panel.classList.contains("hidden")) return;
+    if (!panel.classList.contains("open")) return;
     if (panel.contains(e.target) || btn.contains(e.target)) return;
-    panel.classList.add("hidden");
+    panel.classList.remove("open");
   });
 }
 

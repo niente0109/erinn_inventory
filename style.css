@@ -106,19 +106,34 @@ body {
   font-size: 1.1rem;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.15s ease;
+  z-index: 60;
 }
 .settings-btn:hover { border-color: var(--gold); transform: rotate(25deg); }
 
 .hidden { display: none !important; }
 
+/* ===== 설정 패널: 우측에서 슬라이드되는 서랍 형태 =====
+   display 전환 대신 항상 렌더링해두고 transform으로 화면 밖에 숨겨둡니다.
+   그래야 본문 레이아웃을 밀어내지 않고, 여닫을 때 부드럽게 슬라이드됩니다. */
 .settings-panel {
-  max-width: 480px;
-  margin: 16px auto 0;
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(360px, 88vw);
+  margin: 0;
   background: var(--panel-raised);
-  border: 1px solid var(--border-soft);
-  border-radius: 10px;
-  padding: 16px 18px;
+  border-left: 1px solid var(--border-soft);
+  padding: 20px 18px;
   text-align: left;
+  overflow-y: auto;
+  z-index: 100;
+  transform: translateX(100%);
+  transition: transform 0.28s ease;
+  box-shadow: -10px 0 28px rgba(0,0,0,0.4);
+}
+.settings-panel.open {
+  transform: translateX(0);
 }
 
 .settings-section + .settings-section {
