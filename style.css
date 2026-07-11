@@ -1,15 +1,13 @@
 /*
-  === 커스텀 폰트를 쓰고 싶다면 ===
-  1. 폰트 파일(otf/ttf/woff/woff2 어느 것이든 상관없습니다)을 저장소에 예: fonts/MyFont.woff2 로 업로드
-  2. 아래 주석을 해제하고 파일명/경로를 맞게 수정
-  3. 아래쪽 --font-display 또는 --font-body 값을 "MyFont"로 변경
+  === 커스텀 폰트 3종을 쓰고 싶다면 ===
+  1. 폰트 파일 3개를 저장소에 예: fonts/Font1.woff2, fonts/Font2.woff2, fonts/Font3.woff2 로 업로드
+     (otf/ttf/woff/woff2 어느 형식이든 상관없이 동작합니다)
+  2. 아래 3개 블록의 주석을 해제하고 파일명/경로를 맞게 수정
+  3. font-family 이름(CustomFont1 등)은 app.js의 FONT_PRESETS 배열에서 그대로 참조하고 있으니 이름만 통일하면 됩니다
 
-  @font-face {
-    font-family: "MyFont";
-    src: url("fonts/MyFont.woff2") format("woff2");
-    font-weight: normal;
-    font-style: normal;
-  }
+  @font-face { font-family: "CustomFont1"; src: url("fonts/Font1.woff2") format("woff2"); }
+  @font-face { font-family: "CustomFont2"; src: url("fonts/Font2.woff2") format("woff2"); }
+  @font-face { font-family: "CustomFont3"; src: url("fonts/Font3.woff2") format("woff2"); }
 */
 
 :root {
@@ -56,6 +54,7 @@ body {
 }
 
 .app-header {
+  position: relative;
   text-align: center;
   padding: 28px 16px 18px;
   border-bottom: 2px solid var(--gold);
@@ -93,24 +92,126 @@ body {
 .data-status.warn { color: var(--gold-bright); }
 .data-status.error { color: var(--danger-bright); }
 
-.theme-controls {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 14px;
-  margin-top: 14px;
-  padding-top: 12px;
+.settings-btn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--panel-raised);
+  border: 1px solid var(--border-soft);
+  color: var(--gold-bright);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.15s ease;
+}
+.settings-btn:hover { border-color: var(--gold); transform: rotate(25deg); }
+
+.hidden { display: none !important; }
+
+.settings-panel {
+  max-width: 480px;
+  margin: 16px auto 0;
+  background: var(--panel-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 16px 18px;
+  text-align: left;
+}
+
+.settings-section + .settings-section {
+  margin-top: 16px;
+  padding-top: 14px;
   border-top: 1px dashed var(--border-mid);
 }
-.theme-controls label {
+
+.settings-section h2 {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--gold-bright);
+  margin: 0 0 6px;
+}
+
+.settings-hint {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.palette-presets, .font-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.palette-swatch-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  padding: 4px 10px 4px 4px;
+  font-size: 0.74rem;
+  color: var(--text-light);
+  cursor: pointer;
+}
+.palette-swatch-btn:hover { border-color: var(--gold); }
+.palette-swatch-btn.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
+
+.palette-swatch-dots {
+  display: flex;
+}
+.palette-swatch-dots span {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.3);
+  margin-left: -4px;
+}
+.palette-swatch-dots span:first-child { margin-left: 0; }
+
+.font-preset-btn {
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  cursor: pointer;
+}
+.font-preset-btn:hover { border-color: var(--gold); }
+.font-preset-btn.active { border-color: var(--gold); background: var(--panel); box-shadow: 0 0 0 1px var(--gold); color: var(--gold-bright); }
+
+.text-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 10px;
+}
+.text-toggle-btn:hover { color: var(--gold-bright); }
+
+.palette-custom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border-mid);
+}
+.palette-custom label {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.76rem;
   color: var(--text-muted);
 }
-.theme-controls input[type="color"] {
+.palette-custom input[type="color"] {
   width: 30px;
   height: 24px;
   border: 1px solid var(--border-soft);
@@ -129,6 +230,19 @@ body {
   cursor: pointer;
 }
 .theme-reset-btn:hover { border-color: var(--gold); color: var(--text-light); }
+
+.settings-close-btn {
+  display: block;
+  margin: 16px auto 0;
+  background: none;
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.settings-close-btn:hover { border-color: var(--gold); color: var(--text-light); }
 
 .tag-filters {
   margin-top: -2px;

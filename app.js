@@ -614,10 +614,19 @@ function restoreState() {
   });
 }
 
-/* ------------------------------ 테마 색상 커스터마이징 ------------------------------ */
+/* ------------------------------ 설정 패널: 색상 팔레트 ------------------------------ */
 
 const THEME_STORAGE_KEY = "mabinogi-bag-sim-theme-v1";
-const DEFAULT_THEME = { base: "#2a1e14", highlight: "#c9a227", shadow: "#1b130c" };
+const DEFAULT_THEME = { name: "기본(다크우드)", base: "#2a1e14", highlight: "#c9a227", shadow: "#1b130c" };
+
+// TODO: 실제 인게임 팔레트 14종 스크린샷을 분석해서 아래 배열을 14개 항목으로 교체해주세요.
+// 지금은 구조를 보여주기 위한 예시(데모) 팔레트 몇 개만 들어있습니다.
+const THEME_PRESETS = [
+  DEFAULT_THEME,
+  { name: "예시: 심해 블루", base: "#16232f", highlight: "#4fb3d9", shadow: "#0a131a" },
+  { name: "예시: 진홍빛", base: "#2a1418", highlight: "#c94f4f", shadow: "#170a0c" },
+  { name: "예시: 이끼 그린", base: "#1c2418", highlight: "#7cae5a", shadow: "#0f140d" },
+];
 
 const themeEl = {
   base: document.getElementById("theme-base-input"),
@@ -626,6 +635,8 @@ const themeEl = {
   reset: document.getElementById("theme-reset-btn"),
 };
 
+let currentThemeName = null;
+
 function applyTheme(theme) {
   document.documentElement.style.setProperty("--theme-base", theme.base);
   document.documentElement.style.setProperty("--theme-highlight", theme.highlight);
@@ -633,10 +644,35 @@ function applyTheme(theme) {
   themeEl.base.value = theme.base;
   themeEl.highlight.value = theme.highlight;
   themeEl.shadow.value = theme.shadow;
+  currentThemeName = theme.name || null;
+  renderPalettePresets();
 }
 
 function saveTheme(theme) {
   try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme)); } catch (e) { /* 무시 */ }
+}
+
+function renderPalettePresets() {
+  const container = document.getElementById("palette-presets");
+  container.innerHTML = "";
+  THEME_PRESETS.forEach(preset => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "palette-swatch-btn" + (currentThemeName === preset.name ? " active" : "");
+    btn.innerHTML = `
+      <span class="palette-swatch-dots">
+        <span style="background:${preset.base}"></span>
+        <span style="background:${preset.highlight}"></span>
+        <span style="background:${preset.shadow}"></span>
+      </span>
+      ${escapeHtml(preset.name)}
+    `;
+    btn.addEventListener("click", () => {
+      applyTheme(preset);
+      saveTheme(preset);
+    });
+    container.appendChild(btn);
+  });
 }
 
 function setupThemeControls() {
@@ -644,25 +680,97 @@ function setupThemeControls() {
   try { saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || "null"); } catch (e) { saved = null; }
   applyTheme(saved || DEFAULT_THEME);
 
-  const onChange = () => {
-    const theme = { base: themeEl.base.value, highlight: themeEl.highlight.value, shadow: themeEl.shadow.value };
+  const onManualChange = () => {
+    const theme = {
+      name: null, // 직접 입력한 값은 프리셋과 매칭되지 않으므로 이름 없음
+      base: themeEl.base.value, highlight: themeEl.highlight.value, shadow: themeEl.shadow.value,
+    };
     applyTheme(theme);
     saveTheme(theme);
   };
-  themeEl.base.addEventListener("input", onChange);
-  themeEl.highlight.addEventListener("input", onChange);
-  themeEl.shadow.addEventListener("input", onChange);
+  themeEl.base.addEventListener("input", onManualChange);
+  themeEl.highlight.addEventListener("input", onManualChange);
+  themeEl.shadow.addEventListener("input", onManualChange);
 
   themeEl.reset.addEventListener("click", () => {
     applyTheme(DEFAULT_THEME);
     saveTheme(DEFAULT_THEME);
+  });
+
+  document.getElementById("palette-custom-toggle").addEventListener("click", (e) => {
+    const box = document.getElementById("palette-custom");
+    box.classList.toggle("hidden");
+    e.target.textContent = box.classList.contains("hidden") ? "직접 입력하기 ▾" : "직접 입력하기 ▴";
+  });
+}
+
+/* ------------------------------ 설정 패널: 폰트 ------------------------------ */
+
+const FONT_STORAGE_KEY = "mabinogi-bag-sim-font-v1";
+
+// TODO: fonts/ 폴더에 실제 폰트 3개를 올리고 style.css 상단의 @font-face 주석을 해제하면
+// 아래 CustomFont1~3 이름이 그대로 적용됩니다.
+const FONT_PRESETS = [
+  { key: "default", label: "기본 (Cinzel / Noto Sans KR)", display: '"Cinzel", serif', body: '"Noto Sans KR", sans-serif' },
+  { key: "font1", label: "폰트 1", display: '"CustomFont1", serif', body: '"CustomFont1", sans-serif' },
+  { key: "font2", label: "폰트 2", display: '"CustomFont2", serif', body: '"CustomFont2", sans-serif' },
+  { key: "font3", label: "폰트 3", display: '"CustomFont3", serif', body: '"CustomFont3", sans-serif' },
+];
+
+let currentFontKey = "default";
+
+function applyFont(preset) {
+  document.documentElement.style.setProperty("--font-display", preset.display);
+  document.documentElement.style.setProperty("--font-body", preset.body);
+  currentFontKey = preset.key;
+  renderFontPresets();
+}
+
+function renderFontPresets() {
+  const container = document.getElementById("font-presets");
+  container.innerHTML = "";
+  FONT_PRESETS.forEach(preset => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "font-preset-btn" + (currentFontKey === preset.key ? " active" : "");
+    btn.textContent = preset.label;
+    btn.addEventListener("click", () => {
+      applyFont(preset);
+      try { localStorage.setItem(FONT_STORAGE_KEY, preset.key); } catch (e) { /* 무시 */ }
+    });
+    container.appendChild(btn);
+  });
+}
+
+function setupFontControls() {
+  let savedKey = null;
+  try { savedKey = localStorage.getItem(FONT_STORAGE_KEY); } catch (e) { savedKey = null; }
+  applyFont(FONT_PRESETS.find(p => p.key === savedKey) || FONT_PRESETS[0]);
+}
+
+/* ------------------------------ 설정 패널: 열기/닫기 ------------------------------ */
+
+function setupSettingsPanel() {
+  const panel = document.getElementById("settings-panel");
+  const btn = document.getElementById("settings-btn");
+  const closeBtn = document.getElementById("settings-close-btn");
+
+  btn.addEventListener("click", () => panel.classList.toggle("hidden"));
+  closeBtn.addEventListener("click", () => panel.classList.add("hidden"));
+
+  document.addEventListener("click", (e) => {
+    if (panel.classList.contains("hidden")) return;
+    if (panel.contains(e.target) || btn.contains(e.target)) return;
+    panel.classList.add("hidden");
   });
 }
 
 /* ---------------------------------- 시작 ---------------------------------- */
 
 async function init() {
+  setupSettingsPanel();
   setupThemeControls();
+  setupFontControls();
   initGridControls();
   setupGridInteractions();
 

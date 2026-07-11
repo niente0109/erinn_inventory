@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>가방 배치 시뮬레이터</title>
+<title>마비노기 가방 배치 시뮬레이터</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
@@ -12,15 +12,33 @@
 <body>
 
 <header class="app-header">
-  <h1>가방 배치 시뮬레이터</h1>
-  <p class="subtitle">보유한(또는 원하는) 가방을 어떻게 구겨넣을지 미리 배치해 볼 수 있습니다.</p>
+  <button id="settings-btn" class="settings-btn" type="button" title="설정" aria-label="설정 열기">⚙</button>
+
+  <h1><span class="rune">⚔</span> 가방 배치 시뮬레이터 <span class="rune">⚔</span></h1>
+  <p class="subtitle">보유한(또는 원하는) 가방을 장착 그리드에 배치하고, 총 내부 용량을 확인해보세요.</p>
   <p id="data-status" class="data-status">데이터를 불러오는 중...</p>
 
-  <div class="theme-controls">
-    <label>기본 색상 <input type="color" id="theme-base-input" value="#2a1e14"></label>
-    <label>하이라이트 <input type="color" id="theme-highlight-input" value="#c9a227"></label>
-    <label>그림자 <input type="color" id="theme-shadow-input" value="#1b130c"></label>
-    <button id="theme-reset-btn" class="theme-reset-btn" type="button">기본값으로</button>
+  <div id="settings-panel" class="settings-panel hidden">
+    <div class="settings-section">
+      <h2>UI 색상 팔레트</h2>
+      <p class="settings-hint">인게임 팔레트 중 하나를 고르거나, 아래에서 직접 값을 입력하세요.</p>
+      <div id="palette-presets" class="palette-presets"></div>
+
+      <button id="palette-custom-toggle" class="text-toggle-btn" type="button">직접 입력하기 ▾</button>
+      <div id="palette-custom" class="palette-custom hidden">
+        <label>기본 색상 <input type="color" id="theme-base-input" value="#2a1e14"></label>
+        <label>하이라이트 <input type="color" id="theme-highlight-input" value="#c9a227"></label>
+        <label>그림자 <input type="color" id="theme-shadow-input" value="#1b130c"></label>
+        <button id="theme-reset-btn" class="theme-reset-btn" type="button">기본값으로</button>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h2>폰트</h2>
+      <div id="font-presets" class="font-presets"></div>
+    </div>
+
+    <button id="settings-close-btn" class="settings-close-btn" type="button">닫기</button>
   </div>
 </header>
 
@@ -39,7 +57,7 @@
         <option value="in-asc">내부 용량 작은 순</option>
       </select>
     </div>
-    <p class="hint">가방을 선택한 뒤 배치할 위치를 클릭해 주세요.</p>
+    <p class="hint">카드를 그리드로 드래그하거나, 카드를 탭한 뒤 그리드 칸을 탭해서 배치하세요.</p>
     <div id="catalog-list" class="catalog-list"></div>
   </aside>
 
