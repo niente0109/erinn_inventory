@@ -4,11 +4,12 @@
      (otf/ttf/woff/woff2 어느 형식이든 상관없이 동작합니다)
   2. 아래 3개 블록의 주석을 해제하고 파일명/경로를 맞게 수정
   3. font-family 이름(CustomFont1 등)은 app.js의 FONT_PRESETS 배열에서 그대로 참조하고 있으니 이름만 통일하면 됩니다
-
-  @font-face { font-family: "CustomFont1"; src: url("fonts/Font1.woff2") format("woff2"); }
-  @font-face { font-family: "CustomFont2"; src: url("fonts/Font2.woff2") format("woff2"); }
-  @font-face { font-family: "CustomFont3"; src: url("fonts/Font3.woff2") format("woff2"); }
 */
+
+  @font-face { font-family: "CustomFont1"; src: url("fonts/NanumGothic.otf") format("off"); }
+  @font-face { font-family: "CustomFont2"; src: url("fonts/Mabinogi_Classic_OTF.off") format("off"); }
+  @font-face { font-family: "CustomFont3"; src: url("fonts/MonaS12.off") format("off"); }
+
 
 :root {
   /* ===== 여기 3개 값만 바꾸면 전체 색상 톤이 바뀝니다 ===== */
