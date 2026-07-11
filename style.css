@@ -1,20 +1,45 @@
+/*
+  === 커스텀 폰트를 쓰고 싶다면 ===
+  1. 폰트 파일(otf/ttf/woff/woff2 어느 것이든 상관없습니다)을 저장소에 예: fonts/MyFont.woff2 로 업로드
+  2. 아래 주석을 해제하고 파일명/경로를 맞게 수정
+  3. 아래쪽 --font-display 또는 --font-body 값을 "MyFont"로 변경
+
+  @font-face {
+    font-family: "MyFont";
+    src: url("fonts/MyFont.woff2") format("woff2");
+    font-weight: normal;
+    font-style: normal;
+  }
+*/
+
 :root {
-  --bg-deep: #1b130c;
-  --panel: #2a1e14;
-  --panel-raised: #33251a;
+  /* ===== 여기 3개 값만 바꾸면 전체 색상 톤이 바뀝니다 ===== */
+  --theme-base: #2a1e14;       /* 기본 색상 (패널, 카드 배경) */
+  --theme-highlight: #c9a227;  /* 하이라이트 (테두리, 포인트, 글자 강조) */
+  --theme-shadow: #1b130c;     /* 그림자 (전체 배경, 어두운 톤) */
+  /* ======================================================== */
+
+  --bg-deep: var(--theme-shadow);
+  --panel: var(--theme-base);
+  --panel-raised: color-mix(in srgb, var(--theme-base) 82%, white 18%);
+  --border-mid: color-mix(in srgb, var(--theme-base) 55%, var(--theme-shadow) 45%);
+  --border-soft: color-mix(in srgb, var(--theme-base) 70%, white 12%);
+  --ink: color-mix(in srgb, var(--theme-shadow) 88%, black 12%);
+
   --parchment: #ece0c4;
   --parchment-dim: #d8c69f;
-  --gold: #c9a227;
-  --gold-bright: #e6c463;
-  --ink: #241a10;
+  --gold: var(--theme-highlight);
+  --gold-bright: color-mix(in srgb, var(--theme-highlight) 72%, white 28%);
   --text-light: #f3ead4;
-  --text-muted: #b8a37f;
+  --text-muted: color-mix(in srgb, var(--theme-highlight) 35%, #b8a37f 65%);
   --type-doll: #b1608c;
   --type-normal: #4f7a5c;
   --type-other: #4a6a8a;
   --danger: #a83232;
   --danger-bright: #d65a5a;
-  --cell-size: clamp(30px, 6vw, 46px);
+
+  /* 인게임 인벤토리와 동일한 1칸 크기 (24 x 24px) */
+  --cell-size: 24px;
 
   --font-display: "Cinzel", serif;
   --font-body: "Noto Sans KR", sans-serif;
@@ -24,7 +49,7 @@
 
 body {
   margin: 0;
-  background: radial-gradient(ellipse at top, #2a1d13 0%, var(--bg-deep) 60%);
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--theme-base) 70%, white 6%) 0%, var(--bg-deep) 60%);
   color: var(--text-light);
   font-family: var(--font-body);
   min-height: 100vh;
@@ -68,6 +93,51 @@ body {
 .data-status.warn { color: var(--gold-bright); }
 .data-status.error { color: var(--danger-bright); }
 
+.theme-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-mid);
+}
+.theme-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+.theme-controls input[type="color"] {
+  width: 30px;
+  height: 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+.theme-reset-btn {
+  background: none;
+  border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+.theme-reset-btn:hover { border-color: var(--gold); color: var(--text-light); }
+
+.tag-filters {
+  margin-top: -2px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border-mid);
+  display: none; /* 데이터에 태그가 있을 때만 자동으로 표시됩니다 */
+}
+.tag-filters.visible { display: flex; }
+
 .layout {
   display: grid;
   grid-template-columns: 320px 1fr;
@@ -86,7 +156,7 @@ body {
 
 .catalog-panel, .board-panel {
   background: var(--panel);
-  border: 1px solid #4a3a26;
+  border: 1px solid var(--border-mid);
   border-radius: 10px;
   padding: 14px;
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 8px 24px rgba(0,0,0,0.35);
@@ -101,7 +171,7 @@ body {
 
 #search-input, #sort-select, .board-toolbar input {
   background: var(--ink);
-  border: 1px solid #55432c;
+  border: 1px solid var(--border-soft);
   color: var(--text-light);
   padding: 8px 10px;
   border-radius: 6px;
@@ -122,7 +192,7 @@ body {
 
 .type-filter-btn {
   background: var(--panel-raised);
-  border: 1px solid #55432c;
+  border: 1px solid var(--border-soft);
   color: var(--text-muted);
   padding: 5px 10px;
   border-radius: 999px;
@@ -160,14 +230,14 @@ body {
 }
 
 .catalog-list::-webkit-scrollbar { width: 8px; }
-.catalog-list::-webkit-scrollbar-thumb { background: #55432c; border-radius: 4px; }
+.catalog-list::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
 
 .bag-card {
   display: flex;
   align-items: center;
   gap: 10px;
   background: var(--panel-raised);
-  border: 1px solid #4a3a26;
+  border: 1px solid var(--border-mid);
   border-radius: 8px;
   padding: 8px 10px;
   cursor: grab;
@@ -190,7 +260,7 @@ body {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.bag-card.disabled:hover { border-color: #4a3a26; }
+.bag-card.disabled:hover { border-color: var(--border-mid); }
 
 .unique-badge {
   flex: 0 0 auto;
@@ -215,7 +285,7 @@ body {
   justify-content: center;
   font-size: 0.6rem;
   color: var(--text-muted);
-  border: 1px solid #55432c;
+  border: 1px solid var(--border-soft);
 }
 
 .bag-info {
@@ -307,16 +377,16 @@ body {
   display: flex;
   justify-content: center;
   padding: 16px;
-  background: repeating-linear-gradient(45deg, #241a10, #241a10 10px, #251b11 10px, #251b11 20px);
+  background: repeating-linear-gradient(45deg, var(--ink), var(--ink) 10px, color-mix(in srgb, var(--ink) 92%, white 8%) 10px, color-mix(in srgb, var(--ink) 92%, white 8%) 20px);
   border-radius: 8px;
-  border: 1px solid #4a3a26;
+  border: 1px solid var(--border-mid);
   overflow-x: auto;
 }
 
 .grid {
   position: relative;
   display: grid;
-  gap: 3px;
+  gap: 1px;
   grid-template-columns: repeat(var(--cols), var(--cell-size));
   grid-template-rows: repeat(var(--rows), var(--cell-size));
 }
@@ -324,7 +394,7 @@ body {
 .cell {
   background: var(--parchment);
   border: 1px solid var(--parchment-dim);
-  border-radius: 3px;
+  border-radius: 2px;
   box-shadow: inset 0 0 3px rgba(0,0,0,0.35);
 }
 
@@ -332,23 +402,29 @@ body {
   position: absolute;
   width: 100%;
   height: 100%;
-  border-radius: 5px;
-  border: 2px solid var(--gold-bright);
+  border-radius: 2px;
+  border: 1px solid var(--gold-bright);
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 2px;
-  font-size: 0.68rem;
+  padding: 1px;
+  font-size: 5.5px;
   font-weight: 700;
   color: #fff;
-  line-height: 1.2;
+  line-height: 1;
   overflow: hidden;
   pointer-events: none;
   background-size: cover;
   background-position: center;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
   animation: pop-in 0.12s ease-out;
+}
+
+/* 이미지가 지정된 가방은 아이콘만 보여주고 이름 텍스트는 숨깁니다 (인게임 슬롯처럼) */
+.placed-bag.has-image {
+  color: transparent;
+  text-shadow: none;
 }
 
 @keyframes pop-in {
@@ -358,15 +434,15 @@ body {
 
 .placed-bag .remove-btn {
   position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 18px;
-  height: 18px;
+  top: -6px;
+  right: -6px;
+  width: 13px;
+  height: 13px;
   border-radius: 50%;
   background: var(--danger);
   color: #fff;
   border: 1px solid var(--parchment);
-  font-size: 0.7rem;
+  font-size: 8px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -394,14 +470,14 @@ body {
   gap: 14px;
   margin-top: 16px;
   padding-top: 14px;
-  border-top: 1px solid #4a3a26;
+  border-top: 1px solid var(--border-mid);
 }
 
 .summary-item {
   flex: 1;
   min-width: 140px;
   background: var(--panel-raised);
-  border: 1px solid #4a3a26;
+  border: 1px solid var(--border-mid);
   border-radius: 8px;
   padding: 10px 14px;
 }

@@ -15,6 +15,13 @@
   <h1><span class="rune">⚔</span> 가방 배치 시뮬레이터 <span class="rune">⚔</span></h1>
   <p class="subtitle">보유한(또는 원하는) 가방을 장착 그리드에 배치하고, 총 내부 용량을 확인해보세요.</p>
   <p id="data-status" class="data-status">데이터를 불러오는 중...</p>
+
+  <div class="theme-controls">
+    <label>기본 색상 <input type="color" id="theme-base-input" value="#2a1e14"></label>
+    <label>하이라이트 <input type="color" id="theme-highlight-input" value="#c9a227"></label>
+    <label>그림자 <input type="color" id="theme-shadow-input" value="#1b130c"></label>
+    <button id="theme-reset-btn" class="theme-reset-btn" type="button">기본값으로</button>
+  </div>
 </header>
 
 <div class="layout">
@@ -23,6 +30,7 @@
     <div class="catalog-controls">
       <input id="search-input" type="text" placeholder="가방 이름 검색..." autocomplete="off">
       <div id="type-filters" class="type-filters"></div>
+      <div id="tag-filters" class="type-filters tag-filters"></div>
       <select id="sort-select">
         <option value="name">이름순</option>
         <option value="out-desc">배치 크기 큰 순</option>

@@ -31,6 +31,7 @@ const state = {
   selectedBagKey: null, // 클릭-배치 모드에서 선택된 카드의 key
   nextId: 1,
   typeFilter: "전체",
+  tagFilters: new Set(), // 선택된 목적별 태그 (다중 선택, 비어있으면 전체 표시)
   searchText: "",
   sortMode: "name",
 };
@@ -39,6 +40,7 @@ const el = {
   status: document.getElementById("data-status"),
   search: document.getElementById("search-input"),
   typeFilters: document.getElementById("type-filters"),
+  tagFilters: document.getElementById("tag-filters"),
   sort: document.getElementById("sort-select"),
   catalogList: document.getElementById("catalog-list"),
   extInput: document.getElementById("ext-input"),
@@ -138,6 +140,7 @@ function csvToBags(text) {
     in_h: idx(["in_h", "inh"]),
     image: idx(["image_url", "image", "img", "imageurl", "이미지"]),
     unique: idx(["unique", "no_duplicate", "중복불가", "중복소지불가", "dup_limit"]),
+    tags: idx(["tags", "tag", "분류2", "용도", "목적", "category2"]),
   };
 
   if (col.name === -1 || col.out_w === -1 || col.out_h === -1 || col.in_w === -1 || col.in_h === -1) {
@@ -162,9 +165,16 @@ function csvToBags(text) {
       out_w, out_h, in_w, in_h,
       image_url: col.image !== -1 ? (row[col.image] || "").trim() : "",
       unique: col.unique !== -1 ? isTruthy(row[col.unique]) : false,
+      tags: col.tags !== -1 ? splitTags(row[col.tags]) : [],
     });
   }
   return bags;
+}
+
+// "이벤트,계절/한정" 처럼 쉼표/슬래시/세미콜론/파이프로 구분된 값을 배열로 변환
+function splitTags(v) {
+  if (!v) return [];
+  return v.split(/[,/;|]/).map(s => s.trim()).filter(Boolean);
 }
 
 // "Y", "TRUE", "1", "중복불가" 등 다양한 표기를 참(true)으로 인식
@@ -185,6 +195,32 @@ const TYPE_COLORS = {
 };
 function typeColor(type) {
   return TYPE_COLORS[type] || "var(--type-other)";
+}
+
+function renderTagFilters() {
+  const allTags = new Set();
+  state.bags.forEach(b => (b.tags || []).forEach(t => allTags.add(t)));
+
+  if (allTags.size === 0) {
+    el.tagFilters.classList.remove("visible");
+    el.tagFilters.innerHTML = "";
+    return;
+  }
+
+  el.tagFilters.classList.add("visible");
+  el.tagFilters.innerHTML = "";
+  [...allTags].sort((a, b) => a.localeCompare(b, "ko")).forEach(tag => {
+    const btn = document.createElement("button");
+    btn.className = "type-filter-btn" + (state.tagFilters.has(tag) ? " active" : "");
+    btn.textContent = tag;
+    btn.addEventListener("click", () => {
+      if (state.tagFilters.has(tag)) state.tagFilters.delete(tag);
+      else state.tagFilters.add(tag);
+      renderTagFilters();
+      renderCatalog();
+    });
+    el.tagFilters.appendChild(btn);
+  });
 }
 
 function renderTypeFilters() {
@@ -208,6 +244,9 @@ function getFilteredSortedBags() {
 
   if (state.typeFilter !== "전체") {
     list = list.filter(({ bag }) => bag.type === state.typeFilter);
+  }
+  if (state.tagFilters.size > 0) {
+    list = list.filter(({ bag }) => (bag.tags || []).some(t => state.tagFilters.has(t)));
   }
   if (state.searchText.trim()) {
     const q = state.searchText.trim().toLowerCase();
@@ -387,7 +426,7 @@ function renderGrid() {
 
 function makePlacedBagEl(p) {
   const div = document.createElement("div");
-  div.className = "placed-bag";
+  div.className = "placed-bag" + (p.bag.image_url ? " has-image" : "");
   div.style.gridColumn = `${p.x + 1} / span ${p.bag.out_w}`;
   div.style.gridRow = `${p.y + 1} / span ${p.bag.out_h}`;
   div.style.background = typeColor(p.bag.type);
@@ -575,9 +614,55 @@ function restoreState() {
   });
 }
 
+/* ------------------------------ 테마 색상 커스터마이징 ------------------------------ */
+
+const THEME_STORAGE_KEY = "mabinogi-bag-sim-theme-v1";
+const DEFAULT_THEME = { base: "#2a1e14", highlight: "#c9a227", shadow: "#1b130c" };
+
+const themeEl = {
+  base: document.getElementById("theme-base-input"),
+  highlight: document.getElementById("theme-highlight-input"),
+  shadow: document.getElementById("theme-shadow-input"),
+  reset: document.getElementById("theme-reset-btn"),
+};
+
+function applyTheme(theme) {
+  document.documentElement.style.setProperty("--theme-base", theme.base);
+  document.documentElement.style.setProperty("--theme-highlight", theme.highlight);
+  document.documentElement.style.setProperty("--theme-shadow", theme.shadow);
+  themeEl.base.value = theme.base;
+  themeEl.highlight.value = theme.highlight;
+  themeEl.shadow.value = theme.shadow;
+}
+
+function saveTheme(theme) {
+  try { localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(theme)); } catch (e) { /* 무시 */ }
+}
+
+function setupThemeControls() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(THEME_STORAGE_KEY) || "null"); } catch (e) { saved = null; }
+  applyTheme(saved || DEFAULT_THEME);
+
+  const onChange = () => {
+    const theme = { base: themeEl.base.value, highlight: themeEl.highlight.value, shadow: themeEl.shadow.value };
+    applyTheme(theme);
+    saveTheme(theme);
+  };
+  themeEl.base.addEventListener("input", onChange);
+  themeEl.highlight.addEventListener("input", onChange);
+  themeEl.shadow.addEventListener("input", onChange);
+
+  themeEl.reset.addEventListener("click", () => {
+    applyTheme(DEFAULT_THEME);
+    saveTheme(DEFAULT_THEME);
+  });
+}
+
 /* ---------------------------------- 시작 ---------------------------------- */
 
 async function init() {
+  setupThemeControls();
   initGridControls();
   setupGridInteractions();
 
@@ -594,6 +679,7 @@ async function init() {
 
   await loadBags();
   renderTypeFilters();
+  renderTagFilters();
   renderCatalog();
   restoreState();
   renderGrid();
