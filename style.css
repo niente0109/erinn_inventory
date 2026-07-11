@@ -6,9 +6,9 @@
   3. font-family 이름(CustomFont1 등)은 app.js의 FONT_PRESETS 배열에서 그대로 참조하고 있으니 이름만 통일하면 됩니다
 */
 
-  @font-face { font-family: "CustomFont1"; src: url("fonts/NanumGothic.otf") format("off"); }
-  @font-face { font-family: "CustomFont2"; src: url("fonts/Mabinogi_Classic_OTF.off") format("off"); }
-  @font-face { font-family: "CustomFont3"; src: url("fonts/MonaS12.off") format("off"); }
+  @font-face { font-family: "CustomFont1"; src: url("fonts/NanumGothic.otf") format("otf"); }
+  @font-face { font-family: "CustomFont2"; src: url("fonts/Mabinogi_Classic_OTF.off") format("otf"); }
+  @font-face { font-family: "CustomFont3"; src: url("fonts/MonaS12.off") format("otf"); }
 
 
 :root {
