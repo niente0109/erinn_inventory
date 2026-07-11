@@ -724,9 +724,9 @@ const FONT_STORAGE_KEY = "mabinogi-bag-sim-font-v1";
 // 아래 CustomFont1~3 이름이 그대로 적용됩니다.
 const FONT_PRESETS = [
   { key: "default", label: "기본 (Cinzel / Noto Sans KR)", display: '"Cinzel", serif', body: '"Noto Sans KR", sans-serif' },
-  { key: "font1", label: "폰트 1", display: '"CustomFont1", serif', body: '"CustomFont1", sans-serif' },
-  { key: "font2", label: "폰트 2", display: '"CustomFont2", serif', body: '"CustomFont2", sans-serif' },
-  { key: "font3", label: "폰트 3", display: '"CustomFont3", serif', body: '"CustomFont3", sans-serif' },
+  { key: "font1", label: "나눔고딕", display: '"CustomFont1", serif', body: '"CustomFont1", sans-serif' },
+  { key: "font2", label: "마비옛체", display: '"CustomFont2", serif', body: '"CustomFont2", sans-serif' },
+  { key: "font3", label: "모나S12", display: '"CustomFont3", serif', body: '"CustomFont3", sans-serif' },
 ];
 
 let currentFontKey = "default";
