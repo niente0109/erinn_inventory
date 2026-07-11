@@ -12,9 +12,9 @@
 
 :root {
   /* ===== 여기 3개 값만 바꾸면 전체 색상 톤이 바뀝니다 ===== */
-  --theme-base: #2a1e14;       /* 기본 색상 (패널, 카드 배경) */
-  --theme-highlight: #c9a227;  /* 하이라이트 (테두리, 포인트, 글자 강조) */
-  --theme-shadow: #1b130c;     /* 그림자 (전체 배경, 어두운 톤) */
+  --theme-base: #1c2a38;       /* 기본 색상 (패널, 카드 배경) */
+  --theme-highlight: #4fa3d9;  /* 하이라이트 (테두리, 포인트, 글자 강조) */
+  --theme-shadow: #0d151c;     /* 그림자 (전체 배경, 어두운 톤) */
   /* ======================================================== */
 
   --bg-deep: var(--theme-shadow);
@@ -492,9 +492,48 @@ body {
   justify-content: center;
   padding: 16px;
   background: repeating-linear-gradient(45deg, var(--ink), var(--ink) 10px, color-mix(in srgb, var(--ink) 92%, white 8%) 10px, color-mix(in srgb, var(--ink) 92%, white 8%) 20px);
-  border-radius: 8px;
   border: 1px solid var(--border-mid);
   overflow-x: auto;
+}
+
+.board-window {
+  border: 1px solid var(--border-mid);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.board-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 100%);
+  color: var(--ink);
+}
+
+.titlebar-icon {
+  cursor: pointer;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+.titlebar-icon:hover { opacity: 1; }
+
+.titlebar-label {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.titlebar-window-dots {
+  display: flex;
+  gap: 6px;
+}
+.titlebar-window-dots span {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: rgba(0,0,0,0.25);
 }
 
 .grid {
