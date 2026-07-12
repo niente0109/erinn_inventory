@@ -618,19 +618,19 @@ const THEME_STORAGE_KEY = "mabinogi-bag-sim-theme-v1";
 const DEFAULT_THEME = { name: "블루(기본)", base: "#1c2a38", highlight: "#4fa3d9", shadow: "#0d151c" };
 
 const THEME_PRESETS = [
-  { name: "하늘유리",   base: "#1c2a38", highlight: "#4fa3d9", shadow: "#0d151c" },
-  { name: "전자제품",    base: "#22262b", highlight: "#9aa5b1", shadow: "#101214" },
-  { name: "인형핑크",        base: "#33202b", highlight: "#e685b5", shadow: "#1a0f15" },
-  { name: "투명회색",       base: "#26282a", highlight: "#8fa3ad", shadow: "#131415" },
-  { name: "불꽃개발",        base: "#331c1c", highlight: "#d9534f", shadow: "#1a0d0d" },
-  { name: "아이보리",   base: "#2c2a1c", highlight: "#e8d98f", shadow: "#171609" },
-  { name: "딸기우유",  base: "#332428", highlight: "#e8a8b8", shadow: "#1c1315" },
-  { name: "네온그린",       base: "#16292a", highlight: "#3f9c9e", shadow: "#0a1516" },
-  { name: "네온핑크",     base: "#2a1418", highlight: "#a83244", shadow: "#160a0c" },
-  { name: "라임옐로",        base: "#222c14", highlight: "#a8cc4f", shadow: "#11160a" },
+  { name: "블루(기본)",   base: "#1c2a38", highlight: "#4fa3d9", shadow: "#0d151c" },
+  { name: "블랙/스틸",    base: "#22262b", highlight: "#9aa5b1", shadow: "#101214" },
+  { name: "핑크",        base: "#33202b", highlight: "#e685b5", shadow: "#1a0f15" },
+  { name: "레드",        base: "#331c1c", highlight: "#d9534f", shadow: "#1a0d0d" },
+  { name: "다크레드",     base: "#2a1418", highlight: "#a83244", shadow: "#160a0c" },
+  { name: "그레이",       base: "#26282a", highlight: "#8fa3ad", shadow: "#131415" },
+  { name: "로즈(연분홍)",  base: "#332428", highlight: "#e8a8b8", shadow: "#1c1315" },
+  { name: "다크틸",       base: "#16292a", highlight: "#3f9c9e", shadow: "#0a1516" },
   { name: "퍼플",        base: "#26182c", highlight: "#a85fc9", shadow: "#140d17" },
-  { name: "다크샌드",    base: "#2c2418", highlight: "#c9964f", shadow: "#17130c" },
+  { name: "라임",        base: "#222c14", highlight: "#a8cc4f", shadow: "#11160a" },
+  { name: "탄/브라운",    base: "#2c2418", highlight: "#c9964f", shadow: "#17130c" },
   { name: "슬레이트블루",  base: "#20242c", highlight: "#7d93b3", shadow: "#10131a" },
+  { name: "크림/옐로우",   base: "#2c2a1c", highlight: "#e8d98f", shadow: "#171609" },
   { name: "스카이블루",    base: "#1c2830", highlight: "#7fc4e8", shadow: "#0e1418" },
 ];
 
