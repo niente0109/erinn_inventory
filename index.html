@@ -62,10 +62,14 @@
 
   <main class="board-panel">
     <div class="board-toolbar">
-      <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
-      <label>인벤토리 확장권 사용 개수 (0~3)
+      <div class="grid-size-info">
+        <label>인벤토리 확장권 사용 개수 (0~3)
         <input id="ext-input" type="number" min="0" max="3" value="0">
       </label>
+        <p>
+        현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong>
+        </p>
+      </div>
       <button id="clear-btn" class="danger-btn">전체 초기화</button>
     </div>
     <p id="place-message" class="place-message"></p>
