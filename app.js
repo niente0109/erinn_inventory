@@ -566,6 +566,23 @@ function setupGridInteractions() {
     const y = parseInt(cellEl.dataset.y, 10);
     tryPlaceBag(bag, x, y);
   });
+
+  // 가방을 선택한 상태로 그리드 위를 움직이면, 놓을 수 없는 자리에서 커서가 바뀝니다.
+  el.grid.addEventListener("mousemove", (e) => {
+    if (draggingMove) return; // 네이티브 드래그 중엔 커서를 OS/브라우저가 담당하므로 건드리지 않음
+    const key = state.selectedBagKey;
+    if (!key) { el.grid.classList.remove("invalid-target"); return; }
+    const bag = findBagByKey(key);
+    if (!bag) { el.grid.classList.remove("invalid-target"); return; }
+
+    const { x, y } = pointerToCell(e.clientX, e.clientY, bag.out_w, bag.out_h);
+    const valid = cellFree(x, y, bag.out_w, bag.out_h);
+    el.grid.classList.toggle("invalid-target", !valid);
+  });
+
+  el.grid.addEventListener("mouseleave", () => {
+    el.grid.classList.remove("invalid-target");
+  });
 }
 
 function pointerToCell(clientX, clientY, w, h) {

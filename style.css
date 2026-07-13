@@ -43,6 +43,11 @@
   --text-outline: 1px 0 0 #808080, -1px 0 0 #808080, 0 1px 0 #808080, 0 -1px 0 #808080,
                   1px 1px 0 #808080, -1px -1px 0 #808080, 1px -1px 0 #808080, -1px 1px 0 #808080;
 
+  /* 커스텀 커서 3종 (32x32 미만 PNG, cursors/ 폴더) */
+  --cursor-default: url("cursors/state.png") 0 0, auto;
+  --cursor-text: url("cursors/text.png") 3 7, text;
+  --cursor-inactive: url("cursors/inactive.png") 10 10, not-allowed;
+
   /* 인게임 인벤토리와 동일한 1칸 크기 (24 x 24px) */
   --cell-size: 24px;
 
@@ -58,6 +63,7 @@ body {
   color: var(--text-light);
   font-family: var(--font-body);
   min-height: 100vh;
+  cursor: var(--cursor-default);
 }
 
 .app-header {
@@ -305,6 +311,10 @@ body {
   margin-bottom: 8px;
 }
 
+#search-input {
+  cursor: var(--cursor-text);
+}
+
 #search-input, #sort-select, .board-toolbar input {
   background: var(--ink);
   border: 1px solid var(--border-soft);
@@ -394,7 +404,7 @@ body {
 
 .bag-card.disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  cursor: var(--cursor-inactive);
 }
 .bag-card.disabled:hover { border-color: var(--border-mid); }
 
@@ -520,7 +530,15 @@ body {
   overflow-x: auto;
 }
 .board-wrapper.collapsed {
-  display: none;
+  /* display:none을 쓰면 폭 계산에서 완전히 빠져서 board-window가 좁아져버립니다.
+     대신 세로 높이와 여백만 접어서, 그리드가 차지하던 가로폭은 그대로 유지합니다. */
+  padding-top: 0;
+  padding-bottom: 0;
+  height: 0;
+  min-height: 0;
+  border-top: none;
+  border-bottom: none;
+  overflow: hidden;
 }
 
 .board-window {
@@ -556,8 +574,8 @@ body {
   gap: 5px;
 }
 .titlebar-window-btn {
-  width: 15px;
-  height: 15px;
+  width: 18px;
+  height: 16px;
   border-radius: 2px;
   background: rgba(0,0,0,0.18);
   border: 1px solid rgba(0,0,0,0.25);
@@ -579,6 +597,9 @@ body {
   gap: 1px;
   grid-template-columns: repeat(var(--cols), var(--cell-size));
   grid-template-rows: repeat(var(--rows), var(--cell-size));
+}
+.grid.invalid-target {
+  cursor: var(--cursor-inactive);
 }
 
 .cell {
