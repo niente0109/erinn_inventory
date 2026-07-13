@@ -39,6 +39,10 @@
   --danger: #a83232;
   --danger-bright: #d65a5a;
 
+  /* 흰 글자(#fff)의 시인성을 위한 얇은 회색 외곽선 */
+  --text-outline: 1px 0 0 #808080, -1px 0 0 #808080, 0 1px 0 #808080, 0 -1px 0 #808080,
+                  1px 1px 0 #808080, -1px -1px 0 #808080, 1px -1px 0 #808080, -1px 1px 0 #808080;
+
   /* 인게임 인벤토리와 동일한 1칸 크기 (24 x 24px) */
   --cell-size: 24px;
 
@@ -69,6 +73,11 @@ body {
   font-weight: 700;
   letter-spacing: 0.06em;
   font-size: clamp(1.3rem, 3.5vw, 2rem);
+  /* 폰트마다 실제 글자 높이(어센더/디센더)가 달라 배수(예: line-height:1.3)로 두면
+     폰트를 바꿀 때마다 제목 줄 높이가 흔들립니다. 절대 px로 고정해서 방지합니다. */
+  line-height: 40px;
+  height: 40px;
+  overflow: hidden;
   color: var(--gold-bright);
   margin: 0 0 6px;
   text-shadow: 0 2px 6px rgba(0,0,0,0.5);
@@ -444,6 +453,7 @@ body {
   font-size: 0.68rem;
   font-weight: 700;
   color: #fff;
+  text-shadow: var(--text-outline);
   flex: 0 0 auto;
 }
 
@@ -490,6 +500,7 @@ body {
   margin-left: auto;
   background: var(--danger);
   color: #fff;
+  text-shadow: var(--text-outline);
   border: none;
   padding: 8px 14px;
   border-radius: 6px;
@@ -597,7 +608,7 @@ body {
   cursor: grab;
   background-size: cover;
   background-position: center;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  text-shadow: var(--text-outline);
   animation: pop-in 0.12s ease-out;
 }
 .placed-bag:active { cursor: grabbing; }
@@ -622,6 +633,7 @@ body {
   border-radius: 50%;
   background: var(--danger);
   color: #fff;
+  text-shadow: var(--text-outline);
   border: 1px solid var(--grid-floor);
   font-size: 8px;
   line-height: 1;
@@ -645,17 +657,27 @@ body {
   background: rgba(168, 50, 50, 0.3);
 }
 
-.summary-panel {
+.board-body {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--border-mid);
+  align-items: flex-start;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.board-window {
+  width: fit-content;
+}
+
+.summary-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 150px;
 }
 
 .summary-item {
-  flex: 1;
+  width: 100%;
   min-width: 140px;
   background: var(--panel-raised);
   border: 1px solid var(--border-mid);
