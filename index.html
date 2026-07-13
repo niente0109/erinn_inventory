@@ -26,9 +26,10 @@
 
       <button id="palette-custom-toggle" class="text-toggle-btn" type="button">직접 입력하기 ▾</button>
       <div id="palette-custom" class="palette-custom hidden">
-        <label>기본 색상 <input type="color" id="theme-base-input" value="#2a1e14"></label>
-        <label>하이라이트 <input type="color" id="theme-highlight-input" value="#c9a227"></label>
-        <label>그림자 <input type="color" id="theme-shadow-input" value="#1b130c"></label>
+        <label>외곽선 <input type="color" id="theme-outline-input" value="#468EB2"></label>
+        <label>그림자 <input type="color" id="theme-shadow-input" value="#326880"></label>
+        <label>내부 <input type="color" id="theme-inner-input" value="#478997"></label>
+        <label>배경 <input type="color" id="theme-bg-input" value="#1A4E8B"></label>
         <button id="theme-reset-btn" class="theme-reset-btn" type="button">기본값으로</button>
       </div>
     </div>
@@ -37,8 +38,6 @@
       <h2>폰트</h2>
       <div id="font-presets" class="font-presets"></div>
     </div>
-
-    <button id="settings-close-btn" class="settings-close-btn" type="button">닫기</button>
   </div>
 </header>
 
@@ -57,7 +56,7 @@
         <option value="in-asc">내부 용량 작은 순</option>
       </select>
     </div>
-    <p class="hint">카드를 그리드로 드래그하거나, 카드를 탭한 뒤 그리드 칸을 탭해서 배치하세요.</p>
+    <p class="hint">카드를 그리드로 드래그하거나, 카드를 탭한 뒤 그리드 칸을 탭해서 배치하세요. 이미 놓인 가방은 그대로 드래그하면 위치를 옮길 수 있어요.</p>
     <div id="catalog-list" class="catalog-list"></div>
   </aside>
 
@@ -73,10 +72,12 @@
 
     <div class="board-window">
       <div class="board-titlebar">
-        <span class="titlebar-icon" id="titlebar-clear-icon" title="전체 초기화">🗑</span>
-        <span class="titlebar-label">가방 인벤토리</span>
-        <span class="titlebar-window-dots" aria-hidden="true">
-          <span></span><span></span><span></span>
+        <!-- 여기에 직접 만드실 인벤토리 아이콘을 넣으세요. 예: <img src="img/inventory_icon.png" alt=""> -->
+        <span class="titlebar-icon" id="titlebar-icon" title="소지품">🎒</span>
+        <span class="titlebar-label">소지품</span>
+        <span class="titlebar-window-controls">
+          <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
+          <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
         </span>
       </div>
       <div class="board-wrapper">

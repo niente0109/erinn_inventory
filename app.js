@@ -369,7 +369,14 @@ function initGridControls() {
   });
 
   el.clearBtn.addEventListener("click", clearAllPlacements);
-  document.getElementById("titlebar-clear-icon").addEventListener("click", clearAllPlacements);
+  document.getElementById("titlebar-close-btn").addEventListener("click", clearAllPlacements);
+
+  const minimizeBtn = document.getElementById("titlebar-minimize-btn");
+  const boardWrapper = document.querySelector(".board-wrapper");
+  minimizeBtn.addEventListener("click", () => {
+    const collapsed = boardWrapper.classList.toggle("collapsed");
+    minimizeBtn.textContent = collapsed ? "▢" : "─";
+  });
 }
 
 function clearAllPlacements() {
@@ -434,8 +441,19 @@ function makePlacedBagEl(p) {
     div.style.backgroundSize = "cover";
     div.style.backgroundPosition = "center";
   }
-  div.title = `${p.bag.name} (내부 ${p.bag.in_w}×${p.bag.in_h})`;
+  div.title = `${p.bag.name} (내부 ${p.bag.in_w}×${p.bag.in_h}) — 드래그해서 위치를 옮길 수 있어요`;
   div.textContent = p.bag.name;
+
+  // 이미 배치된 가방을 그대로 드래그해서 다른 칸으로 옮길 수 있습니다.
+  div.draggable = true;
+  div.addEventListener("dragstart", (e) => {
+    e.dataTransfer.setData("text/plain", "move:" + p.id);
+    draggingMove = { id: p.id, bag: p.bag };
+  });
+  div.addEventListener("dragend", () => {
+    draggingMove = null;
+    clearDragPreview();
+  });
 
   const removeBtn = document.createElement("span");
   removeBtn.className = "remove-btn";
@@ -445,6 +463,11 @@ function makePlacedBagEl(p) {
     state.placements = state.placements.filter(pl => pl.id !== p.id);
     renderGrid();
     saveState();
+  });
+  // x 버튼에서 드래그가 시작되면 부모(가방 전체)가 끌리는 걸 막습니다.
+  removeBtn.addEventListener("dragstart", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
   });
   div.appendChild(removeBtn);
 
@@ -474,10 +497,18 @@ function renderSummary() {
 /* --------------------------- 배치 (드래그 & 클릭) --------------------------- */
 
 let dragPreviewEl = null;
+let draggingMove = null; // 기존 배치를 옮기는 중일 때 { id, bag }
 
 function setupGridInteractions() {
   el.grid.addEventListener("dragover", (e) => {
     e.preventDefault();
+
+    if (draggingMove) {
+      const { x, y } = pointerToCell(e.clientX, e.clientY, draggingMove.bag.out_w, draggingMove.bag.out_h);
+      showDragPreview(x, y, draggingMove.bag, draggingMove.id);
+      return;
+    }
+
     const key = state.selectedBagKey;
     if (!key) return;
     const bag = findBagByKey(key);
@@ -493,8 +524,28 @@ function setupGridInteractions() {
 
   el.grid.addEventListener("drop", (e) => {
     e.preventDefault();
-    const key = e.dataTransfer.getData("text/plain") || state.selectedBagKey;
+    const raw = e.dataTransfer.getData("text/plain");
     clearDragPreview();
+
+    if (raw && raw.startsWith("move:")) {
+      const id = parseInt(raw.slice(5), 10);
+      const placement = state.placements.find(pl => pl.id === id);
+      draggingMove = null;
+      if (!placement) return;
+
+      const { x, y } = pointerToCell(e.clientX, e.clientY, placement.bag.out_w, placement.bag.out_h);
+      if (cellFree(x, y, placement.bag.out_w, placement.bag.out_h, id)) {
+        placement.x = x;
+        placement.y = y;
+        renderGrid();
+        saveState();
+      } else {
+        showMessage("그 자리엔 옮길 수 없어요. 다른 가방과 겹치거나 범위를 벗어나요.");
+      }
+      return;
+    }
+
+    const key = raw || state.selectedBagKey;
     if (!key) return;
     const bag = findBagByKey(key);
     if (!bag) return;
@@ -527,9 +578,9 @@ function pointerToCell(clientX, clientY, w, h) {
   return { x, y };
 }
 
-function showDragPreview(x, y, bag) {
+function showDragPreview(x, y, bag, ignoreId) {
   clearDragPreview();
-  const valid = cellFree(x, y, bag.out_w, bag.out_h);
+  const valid = cellFree(x, y, bag.out_w, bag.out_h, ignoreId);
   const div = document.createElement("div");
   div.className = "drag-preview" + (valid ? "" : " invalid");
   div.style.gridColumn = `${x + 1} / span ${bag.out_w}`;
@@ -615,41 +666,45 @@ function restoreState() {
 /* ------------------------------ 설정 패널: 색상 팔레트 ------------------------------ */
 
 const THEME_STORAGE_KEY = "mabinogi-bag-sim-theme-v1";
-const DEFAULT_THEME = { name: "블루(기본)", base: "#1c2a38", highlight: "#4fa3d9", shadow: "#0d151c" };
+const DEFAULT_THEME = { name: "하늘유리", outline: "#468EB2", shadow: "#326880", inner: "#478997", bg: "#1A4E8B" };
 
+// 인게임 UI 색상 팔레트 14종 (실측 RGB 값)
 const THEME_PRESETS = [
-  { name: "블루(기본)",   base: "#1c2a38", highlight: "#4fa3d9", shadow: "#0d151c" },
-  { name: "블랙/스틸",    base: "#22262b", highlight: "#9aa5b1", shadow: "#101214" },
-  { name: "핑크",        base: "#33202b", highlight: "#e685b5", shadow: "#1a0f15" },
-  { name: "레드",        base: "#331c1c", highlight: "#d9534f", shadow: "#1a0d0d" },
-  { name: "다크레드",     base: "#2a1418", highlight: "#a83244", shadow: "#160a0c" },
-  { name: "그레이",       base: "#26282a", highlight: "#8fa3ad", shadow: "#131415" },
-  { name: "로즈(연분홍)",  base: "#332428", highlight: "#e8a8b8", shadow: "#1c1315" },
-  { name: "다크틸",       base: "#16292a", highlight: "#3f9c9e", shadow: "#0a1516" },
-  { name: "퍼플",        base: "#26182c", highlight: "#a85fc9", shadow: "#140d17" },
-  { name: "라임",        base: "#222c14", highlight: "#a8cc4f", shadow: "#11160a" },
-  { name: "탄/브라운",    base: "#2c2418", highlight: "#c9964f", shadow: "#17130c" },
-  { name: "슬레이트블루",  base: "#20242c", highlight: "#7d93b3", shadow: "#10131a" },
-  { name: "크림/옐로우",   base: "#2c2a1c", highlight: "#e8d98f", shadow: "#171609" },
-  { name: "스카이블루",    base: "#1c2830", highlight: "#7fc4e8", shadow: "#0e1418" },
+  { name: "하늘유리",   outline: "#468EB2", shadow: "#326880", inner: "#478997", bg: "#1A4E8B" },
+  { name: "전자제품",   outline: "#302F2E", shadow: "#070707", inner: "#262626", bg: "#020202" },
+  { name: "인형핑크",   outline: "#977682", shadow: "#8F6273", inner: "#9E868F", bg: "#AD4069" },
+  { name: "투명회색",   outline: "#787878", shadow: "#5C5C5C", inner: "#9A9A9A", bg: "#1C1C1C" },
+  { name: "불꽃개발",   outline: "#81292E", shadow: "#722125", inner: "#8E2F35", bg: "#661214" },
+  { name: "아이보리",   outline: "#E7E1DC", shadow: "#5A5348", inner: "#938779", bg: "#997C63" },
+  { name: "딸기우유",   outline: "#EBDBDA", shadow: "#885552", inner: "#9E8784", bg: "#C7817D" },
+  { name: "네온그린",   outline: "#273737", shadow: "#050909", inner: "#123939", bg: "#020404" },
+  { name: "네온핑크",   outline: "#4C3743", shadow: "#0F090C", inner: "#4D1B35", bg: "#050405" },
+  { name: "라임오렌지", outline: "#E0E771", shadow: "#61790F", inner: "#939A32", bg: "#8E9F04" },
+  { name: "샌드핑크",   outline: "#EFE2D6", shadow: "#755E36", inner: "#A18A6F", bg: "#BF894E" },
+  { name: "도시남자",   outline: "#DEE4E8", shadow: "#4B555C", inner: "#7D8D98", bg: "#69899E" },
+  { name: "머스타드",   outline: "#EDE28E", shadow: "#815435", inner: "#9C8A56", bg: "#C08452" },
+  { name: "라데카블루", outline: "#CDE6EE", shadow: "#2C6E8E", inner: "#7193A1", bg: "#4CA7D2" },
 ];
 
 const themeEl = {
-  base: document.getElementById("theme-base-input"),
-  highlight: document.getElementById("theme-highlight-input"),
+  outline: document.getElementById("theme-outline-input"),
   shadow: document.getElementById("theme-shadow-input"),
+  inner: document.getElementById("theme-inner-input"),
+  bg: document.getElementById("theme-bg-input"),
   reset: document.getElementById("theme-reset-btn"),
 };
 
 let currentThemeName = null;
 
 function applyTheme(theme) {
-  document.documentElement.style.setProperty("--theme-base", theme.base);
-  document.documentElement.style.setProperty("--theme-highlight", theme.highlight);
+  document.documentElement.style.setProperty("--theme-outline", theme.outline);
   document.documentElement.style.setProperty("--theme-shadow", theme.shadow);
-  themeEl.base.value = theme.base;
-  themeEl.highlight.value = theme.highlight;
+  document.documentElement.style.setProperty("--theme-inner", theme.inner);
+  document.documentElement.style.setProperty("--theme-bg", theme.bg);
+  themeEl.outline.value = theme.outline;
   themeEl.shadow.value = theme.shadow;
+  themeEl.inner.value = theme.inner;
+  themeEl.bg.value = theme.bg;
   currentThemeName = theme.name || null;
   renderPalettePresets();
 }
@@ -667,9 +722,10 @@ function renderPalettePresets() {
     btn.className = "palette-swatch-btn" + (currentThemeName === preset.name ? " active" : "");
     btn.innerHTML = `
       <span class="palette-swatch-dots">
-        <span style="background:${preset.base}"></span>
-        <span style="background:${preset.highlight}"></span>
+        <span style="background:${preset.outline}"></span>
         <span style="background:${preset.shadow}"></span>
+        <span style="background:${preset.inner}"></span>
+        <span style="background:${preset.bg}"></span>
       </span>
       ${escapeHtml(preset.name)}
     `;
@@ -689,14 +745,16 @@ function setupThemeControls() {
   const onManualChange = () => {
     const theme = {
       name: null,
-      base: themeEl.base.value, highlight: themeEl.highlight.value, shadow: themeEl.shadow.value,
+      outline: themeEl.outline.value, shadow: themeEl.shadow.value,
+      inner: themeEl.inner.value, bg: themeEl.bg.value,
     };
     applyTheme(theme);
     saveTheme(theme);
   };
-  themeEl.base.addEventListener("input", onManualChange);
-  themeEl.highlight.addEventListener("input", onManualChange);
+  themeEl.outline.addEventListener("input", onManualChange);
   themeEl.shadow.addEventListener("input", onManualChange);
+  themeEl.inner.addEventListener("input", onManualChange);
+  themeEl.bg.addEventListener("input", onManualChange);
 
   themeEl.reset.addEventListener("click", () => {
     applyTheme(DEFAULT_THEME);
@@ -716,7 +774,7 @@ const FONT_STORAGE_KEY = "mabinogi-bag-sim-font-v1";
 
 // fonts/ 폴더의 실제 폰트 3개를 style.css의 @font-face에서 CustomFont1~3으로 연결해두었습니다.
 const FONT_PRESETS = [
-  { key: "default", label: "기본 (Cinzel / Noto Sans KR)", display: '"Cinzel", serif', body: '"Noto Sans KR", sans-serif' },
+  { key: "default", label: "Noto Sans", display: '"Cinzel", serif', body: '"Noto Sans KR", sans-serif' },
   { key: "font1", label: "나눔고딕", display: '"CustomFont1", serif', body: '"CustomFont1", sans-serif' },
   { key: "font2", label: "마비옛체", display: '"CustomFont2", serif', body: '"CustomFont2", sans-serif' },
   { key: "font3", label: "MonaS12(도트)", display: '"CustomFont3", serif', body: '"CustomFont3", sans-serif' },
@@ -758,17 +816,23 @@ function setupFontControls() {
 function setupSettingsPanel() {
   const panel = document.getElementById("settings-panel");
   const btn = document.getElementById("settings-btn");
-  const closeBtn = document.getElementById("settings-close-btn");
 
   // "hidden"(display:none) 대신 "open" 클래스로 transform을 토글합니다.
   // display:none은 트랜지션이 안 걸리기 때문에, 항상 렌더링해두고 화면 밖으로 밀어두는 방식입니다.
-  btn.addEventListener("click", () => panel.classList.toggle("open"));
-  closeBtn.addEventListener("click", () => panel.classList.remove("open"));
+  // 설정 버튼 하나가 열기/닫기를 모두 담당하고, 아이콘도 상태에 맞게 바뀝니다.
+  const setOpen = (open) => {
+    panel.classList.toggle("open", open);
+    btn.classList.toggle("is-close", open);
+    btn.textContent = open ? "✕" : "⚙";
+    btn.title = open ? "설정 닫기" : "설정";
+  };
+
+  btn.addEventListener("click", () => setOpen(!panel.classList.contains("open")));
 
   document.addEventListener("click", (e) => {
     if (!panel.classList.contains("open")) return;
     if (panel.contains(e.target) || btn.contains(e.target)) return;
-    panel.classList.remove("open");
+    setOpen(false);
   });
 }
 

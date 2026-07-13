@@ -12,25 +12,27 @@
 
 
 :root {
-  /* ===== 여기 3개 값만 바꾸면 전체 색상 톤이 바뀝니다 ===== */
-  --theme-base: #1c2a38;       /* 기본 색상 (패널, 카드 배경) */
-  --theme-highlight: #4fa3d9;  /* 하이라이트 (테두리, 포인트, 글자 강조) */
-  --theme-shadow: #0d151c;     /* 그림자 (전체 배경, 어두운 톤) */
+  /* ===== 여기 4개 값이 팔레트 하나를 이룹니다 (인게임 "인터페이스 색상"과 동일한 구조) ===== */
+  --theme-outline: #468EB2; /* 외곽선: 패널 전반의 색상 */
+  --theme-shadow: #326880;  /* 그림자: 그리드 한 칸의 음영(좌상단) */
+  --theme-inner: #478997;   /* 내부: 그리드 바닥 색상 */
+  --theme-bg: #1A4E8B;      /* 배경: 페이지 바탕색 */
   /* ======================================================== */
 
-  --bg-deep: var(--theme-shadow);
-  --panel: var(--theme-base);
-  --panel-raised: color-mix(in srgb, var(--theme-base) 82%, white 18%);
-  --border-mid: color-mix(in srgb, var(--theme-base) 55%, var(--theme-shadow) 45%);
-  --border-soft: color-mix(in srgb, var(--theme-base) 70%, white 12%);
-  --ink: color-mix(in srgb, var(--theme-shadow) 88%, black 12%);
+  --bg-deep: var(--theme-bg);
+  --panel: color-mix(in srgb, var(--theme-outline) 55%, var(--theme-bg) 45%);
+  --panel-raised: color-mix(in srgb, var(--theme-outline) 78%, white 12%);
+  --border-mid: color-mix(in srgb, var(--theme-outline) 55%, var(--theme-shadow) 45%);
+  --border-soft: color-mix(in srgb, var(--theme-outline) 72%, white 14%);
+  --ink: color-mix(in srgb, var(--theme-bg) 85%, black 15%);
 
-  --parchment: #ece0c4;
-  --parchment-dim: #d8c69f;
-  --gold: var(--theme-highlight);
-  --gold-bright: color-mix(in srgb, var(--theme-highlight) 72%, white 28%);
+  --grid-floor: var(--theme-inner);
+  --grid-shadow: var(--theme-shadow);
+
+  --gold: color-mix(in srgb, var(--theme-outline) 55%, white 45%);
+  --gold-bright: color-mix(in srgb, var(--theme-outline) 32%, white 68%);
   --text-light: #f3ead4;
-  --text-muted: color-mix(in srgb, var(--theme-highlight) 35%, #b8a37f 65%);
+  --text-muted: color-mix(in srgb, var(--theme-outline) 38%, #b8a37f 62%);
   --type-doll: #b1608c;
   --type-normal: #4f7a5c;
   --type-other: #4a6a8a;
@@ -48,7 +50,7 @@
 
 body {
   margin: 0;
-  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--theme-base) 70%, white 6%) 0%, var(--bg-deep) 60%);
+  background: radial-gradient(ellipse at top, color-mix(in srgb, var(--theme-outline) 25%, var(--theme-bg) 75%) 0%, var(--bg-deep) 60%);
   color: var(--text-light);
   font-family: var(--font-body);
   min-height: 100vh;
@@ -106,9 +108,10 @@ body {
   font-size: 1.1rem;
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.15s ease;
-  z-index: 60;
+  z-index: 110;
 }
 .settings-btn:hover { border-color: var(--gold); transform: rotate(25deg); }
+.settings-btn.is-close:hover { transform: none; }
 
 .hidden { display: none !important; }
 
@@ -188,14 +191,21 @@ body {
 }
 .palette-swatch-dots span:first-child { margin-left: 0; }
 
+.font-presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .font-preset-btn {
   background: var(--panel);
   border: 1px solid var(--border-soft);
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: 12px 8px;
   font-size: 0.8rem;
   color: var(--text-light);
   cursor: pointer;
+  text-align: center;
 }
 .font-preset-btn:hover { border-color: var(--gold); }
 .font-preset-btn.active { border-color: var(--gold); background: var(--panel); box-shadow: 0 0 0 1px var(--gold); color: var(--gold-bright); }
@@ -246,19 +256,6 @@ body {
   cursor: pointer;
 }
 .theme-reset-btn:hover { border-color: var(--gold); color: var(--text-light); }
-
-.settings-close-btn {
-  display: block;
-  margin: 16px auto 0;
-  background: none;
-  border: 1px solid var(--border-soft);
-  color: var(--text-muted);
-  padding: 6px 16px;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  cursor: pointer;
-}
-.settings-close-btn:hover { border-color: var(--gold); color: var(--text-light); }
 
 .tag-filters {
   margin-top: -2px;
@@ -511,6 +508,9 @@ body {
   border: 1px solid var(--border-mid);
   overflow-x: auto;
 }
+.board-wrapper.collapsed {
+  display: none;
+}
 
 .board-window {
   border: 1px solid var(--border-mid);
@@ -528,11 +528,10 @@ body {
 }
 
 .titlebar-icon {
-  cursor: pointer;
-  font-size: 0.85rem;
-  opacity: 0.85;
+  font-size: 1rem;
+  opacity: 0.9;
+  line-height: 1;
 }
-.titlebar-icon:hover { opacity: 1; }
 
 .titlebar-label {
   font-family: var(--font-display);
@@ -541,16 +540,27 @@ body {
   flex: 1;
 }
 
-.titlebar-window-dots {
+.titlebar-window-controls {
   display: flex;
-  gap: 6px;
+  gap: 5px;
 }
-.titlebar-window-dots span {
-  width: 9px;
-  height: 9px;
+.titlebar-window-btn {
+  width: 18px;
+  height: 16px;
   border-radius: 2px;
-  background: rgba(0,0,0,0.25);
+  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(0,0,0,0.25);
+  color: var(--ink);
+  font-size: 9px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
 }
+.titlebar-window-btn:hover { background: rgba(0,0,0,0.3); }
+.titlebar-window-btn#titlebar-close-btn:hover { background: var(--danger); color: #fff; }
 
 .grid {
   position: relative;
@@ -561,10 +571,11 @@ body {
 }
 
 .cell {
-  background: var(--parchment);
-  border: 1px solid var(--parchment-dim);
+  background: var(--grid-floor);
+  border: 1px solid color-mix(in srgb, var(--grid-floor) 78%, black 22%);
   border-radius: 2px;
-  box-shadow: inset 0 0 3px rgba(0,0,0,0.35);
+  /* 좌상단 광원 기준 ┌ 모양 음영 (인게임 그리드 슬롯의 오목한 느낌) */
+  box-shadow: inset 2px 2px 3px var(--grid-shadow), inset -1px -1px 0 rgba(255,255,255,0.12);
 }
 
 .placed-bag {
@@ -583,12 +594,13 @@ body {
   color: #fff;
   line-height: 1;
   overflow: hidden;
-  pointer-events: none;
+  cursor: grab;
   background-size: cover;
   background-position: center;
   text-shadow: 0 1px 2px rgba(0,0,0,0.8);
   animation: pop-in 0.12s ease-out;
 }
+.placed-bag:active { cursor: grabbing; }
 
 /* 이미지가 지정된 가방은 아이콘만 보여주고 이름 텍스트는 숨깁니다 (인게임 슬롯처럼) */
 .placed-bag.has-image {
@@ -610,7 +622,7 @@ body {
   border-radius: 50%;
   background: var(--danger);
   color: #fff;
-  border: 1px solid var(--parchment);
+  border: 1px solid var(--grid-floor);
   font-size: 8px;
   line-height: 1;
   display: flex;
