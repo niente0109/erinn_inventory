@@ -574,8 +574,8 @@ body {
   gap: 5px;
 }
 .titlebar-window-btn {
-  width: 18px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   border-radius: 2px;
   background: rgba(0,0,0,0.18);
   border: 1px solid rgba(0,0,0,0.25);
