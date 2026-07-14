@@ -70,6 +70,15 @@
         </div>
         <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
       </div>
+      <div class="board-window">
+      <div class="board-titlebar">
+        <img src="img/icon.png" alt="소지품">
+        <span class="titlebar-label">소지품</span>
+        <span class="titlebar-window-controls">
+          <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
+          <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
+        </span>
+      </div>
       <div class="toolbar-actions">
         <button id="clear-btn" class="danger-btn">전체 초기화</button>
         <div class="summary-panel">
@@ -90,15 +99,7 @@
     </div>
     <p id="place-message" class="place-message"></p>
 
-    <div class="board-window">
-      <div class="board-titlebar">
-        <img src="img/icon.png" alt="소지품">
-        <span class="titlebar-label">소지품</span>
-        <span class="titlebar-window-controls">
-          <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
-          <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
-        </span>
-      </div>
+
       <div class="board-wrapper">
         <div id="grid" class="grid"></div>
       </div>
