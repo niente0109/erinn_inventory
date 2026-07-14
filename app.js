@@ -56,6 +56,7 @@ const el = {
   summaryCount: document.getElementById("summary-count"),
   summaryCells: document.getElementById("summary-cells"),
   summaryCapacity: document.getElementById("summary-capacity"),
+  bonusChk: document.getElementById("bonus-capacity-chk")
 };
 
 /* ---------------------------- 데이터 불러오기 ---------------------------- */
@@ -554,7 +555,14 @@ function measureCellPx() {
 function renderSummary() {
   const count = state.placements.length;
   const occupied = state.placements.reduce((s, p) => s + p.bag.out_w * p.bag.out_h, 0);
-  const capacity = state.placements.reduce((s, p) => s + p.bag.in_w * p.bag.in_h, 0);
+
+  // 기본 내부 용량 계산
+  let capacity = state.placements.reduce((s, p) => s + p.bag.in_w * p.bag.in_h, 0);
+
+  // 💡 체크박스가 체크되어 있다면 보너스 용량 50칸을 더해줍니다.
+  if (el.bonusChk && el.bonusChk.checked) {
+    capacity += 50; 
+  }
 
   el.summaryCount.textContent = `${count}개`;
   el.summaryCells.textContent = `${occupied} / ${state.cols * state.rows}`;
@@ -990,6 +998,9 @@ async function init() {
   renderTypeFilters();
   renderTagFilters();
   renderCatalog();
+  if (el.bonusChk) {
+    el.bonusChk.addEventListener("change", renderSummary);
+  }
   restoreState();
   renderGrid();
 }

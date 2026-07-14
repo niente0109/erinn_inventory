@@ -60,15 +60,15 @@
     <p class="hint">가방을 소지품창으로 드래그하거나,</br>클릭한 후 소지품창을 클릭해서 배치하세요.</br>배치한 가방은 드래그하면 위치를 옮길 수 있어요.</p>
     <div id="catalog-list" class="catalog-list"></div>
   </aside>
+
   <main class="board-panel">
-	<p></p>
     <div class="board-toolbar">
 		<div class="board-window">
 		  <div class="board-titlebar">
 			<img src="img/icon.png" alt="">
 			<span class="titlebar-label">소지품</span>
 			<span class="titlebar-window-controls">
-			  <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
+			  <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">_</button>
 			  <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
 			</span>
 		  </div>
@@ -81,18 +81,24 @@
           <span class="ext-label">인벤토리 확장권</span>
           <div id="ext-buttons" class="ext-buttons"></div>
         </div>
-        <div class="grid-size-info">현재 소지품창 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
+        <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
+		<div class="bonus-option-container" style="margin-bottom: 10px; text-align: right;">
+			<label style="font-size: 0.8rem; color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer;">
+			<input type="checkbox" id="bonus-capacity-chk" title="프리미엄 베이직/콤비네이션 멤버십" aria-label="프리미엄 베이직/콤비네이션 멤버십" style="cursor: pointer;">
+				Plus 인벤토리
+			</label>
+		</div>
 		<div class="summary-panel">
           <div class="summary-item">
             <span class="summary-label">배치된 가방</span>
             <span id="summary-count" class="summary-value">0개</span>
           </div>
           <div class="summary-item">
-            <span class="summary-label">사용 중인 칸</span>
+            <span class="summary-label">사용 중인 인벤토리 칸</span>
             <span id="summary-cells" class="summary-value">0 / 0</span>
           </div>
           <div class="summary-item highlight">
-            <span class="summary-label">총 용량 합계</span>
+            <span class="summary-label">총 내부 용량 합계</span>
             <span id="summary-capacity" class="summary-value">0칸</span>
           </div>
         </div>
