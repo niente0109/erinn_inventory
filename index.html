@@ -48,6 +48,7 @@
       <input id="search-input" type="text" placeholder="가방 이름 검색..." autocomplete="off">
       <div id="type-filters" class="type-filters"></div>
       <div id="tag-filters" class="type-filters tag-filters"></div>
+      <div id="tag-filters-2" class="type-filters tag-filters"></div>
       <select id="sort-select">
         <option value="name">이름순</option>
         <option value="out-desc">배치 크기 큰 순</option>
@@ -56,19 +57,16 @@
         <option value="in-asc">내부 용량 작은 순</option>
       </select>
     </div>
-    <p class="hint">가방을 클릭한 후 소지품창을 클릭하거나,</br>가방을 소지품창으로 드래그해서 배치할 수 있어요.</br>배치된 가방을 드래그하면 위치를 옮길 수 있어요.</p>
+    <p class="hint">카드를 그리드로 드래그하거나, 카드를 탭한 뒤 그리드 칸을 탭해서 배치하세요. 이미 놓인 가방은 그대로 드래그하면 위치를 옮길 수 있어요.</p>
     <div id="catalog-list" class="catalog-list"></div>
   </aside>
 
   <main class="board-panel">
     <div class="board-toolbar">
-      <div class="grid-size-info">
-        <label>인벤토리 확장권 사용 개수 (0~3)
-        <input id="ext-input" type="number" min="0" max="3" value="0">
-      </label>
-        <p>
-        현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong>
-        </p>
+      <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
+      <div class="ext-control">
+        <span class="ext-label">인벤토리 확장권</span>
+        <div id="ext-buttons" class="ext-buttons"></div>
       </div>
       <button id="clear-btn" class="danger-btn">전체 초기화</button>
     </div>

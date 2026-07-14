@@ -32,6 +32,7 @@ const state = {
   nextId: 1,
   typeFilter: "전체",
   tagFilters: new Set(),
+  tagFilters2: new Set(),
   searchText: "",
   sortMode: "name",
 };
@@ -41,9 +42,10 @@ const el = {
   search: document.getElementById("search-input"),
   typeFilters: document.getElementById("type-filters"),
   tagFilters: document.getElementById("tag-filters"),
+  tagFilters2: document.getElementById("tag-filters-2"),
   sort: document.getElementById("sort-select"),
   catalogList: document.getElementById("catalog-list"),
-  extInput: document.getElementById("ext-input"),
+  extButtons: document.getElementById("ext-buttons"),
   gridSizeLabel: document.getElementById("grid-size-label"),
   placeMessage: document.getElementById("place-message"),
   clearBtn: document.getElementById("clear-btn"),
@@ -139,6 +141,7 @@ function csvToBags(text) {
     image: idx(["image_url", "image", "img", "imageurl", "이미지"]),
     unique: idx(["unique", "no_duplicate", "중복불가", "중복소지불가", "dup_limit"]),
     tags: idx(["tags", "tag", "분류2", "용도", "목적", "category2"]),
+    tags2: idx(["tags2", "special", "특수기능", "소환효과", "effect", "effect_tags"]),
   };
 
   if (col.name === -1 || col.out_w === -1 || col.out_h === -1 || col.in_w === -1 || col.in_h === -1) {
@@ -164,6 +167,7 @@ function csvToBags(text) {
       image_url: col.image !== -1 ? (row[col.image] || "").trim() : "",
       unique: col.unique !== -1 ? isTruthy(row[col.unique]) : false,
       tags: col.tags !== -1 ? splitTags(row[col.tags]) : [],
+      tags2: col.tags2 !== -1 ? splitTags(row[col.tags2]) : [],
     });
   }
   return bags;
@@ -176,7 +180,7 @@ function splitTags(v) {
 
 function isTruthy(v) {
   const s = (v || "").trim().toLowerCase();
-  return ["y", "yes", "true", "1", "o", "중복불가", "불가", "unique"].includes(s);
+  return ["y", "yes", "t", "true", "1", "o", "중복불가", "불가", "unique"].includes(s);
 }
 
 /* ------------------------------ 카탈로그(목록) ------------------------------ */
@@ -193,30 +197,45 @@ function typeColor(type) {
   return TYPE_COLORS[type] || "var(--type-other)";
 }
 
-function renderTagFilters() {
+// containerEl: 칩을 그릴 컨테이너, bagField: 가방 객체의 태그 배열 필드명,
+// filterSet: 현재 선택된 태그를 담는 Set, groupLabel: 칩 그룹 맨 앞에 붙는 라벨
+function renderTagFilterGroup(containerEl, bagField, filterSet, groupLabel) {
   const allTags = new Set();
-  state.bags.forEach(b => (b.tags || []).forEach(t => allTags.add(t)));
+  state.bags.forEach(b => (b[bagField] || []).forEach(t => allTags.add(t)));
 
   if (allTags.size === 0) {
-    el.tagFilters.classList.remove("visible");
-    el.tagFilters.innerHTML = "";
+    containerEl.classList.remove("visible");
+    containerEl.innerHTML = "";
     return;
   }
 
-  el.tagFilters.classList.add("visible");
-  el.tagFilters.innerHTML = "";
+  containerEl.classList.add("visible");
+  containerEl.innerHTML = "";
+
+  if (groupLabel) {
+    const label = document.createElement("span");
+    label.className = "tag-group-label";
+    label.textContent = groupLabel;
+    containerEl.appendChild(label);
+  }
+
   [...allTags].sort((a, b) => a.localeCompare(b, "ko")).forEach(tag => {
     const btn = document.createElement("button");
-    btn.className = "type-filter-btn" + (state.tagFilters.has(tag) ? " active" : "");
+    btn.className = "type-filter-btn" + (filterSet.has(tag) ? " active" : "");
     btn.textContent = tag;
     btn.addEventListener("click", () => {
-      if (state.tagFilters.has(tag)) state.tagFilters.delete(tag);
-      else state.tagFilters.add(tag);
-      renderTagFilters();
+      if (filterSet.has(tag)) filterSet.delete(tag);
+      else filterSet.add(tag);
+      renderTagFilterGroup(containerEl, bagField, filterSet, groupLabel);
       renderCatalog();
     });
-    el.tagFilters.appendChild(btn);
+    containerEl.appendChild(btn);
   });
+}
+
+function renderTagFilters() {
+  renderTagFilterGroup(el.tagFilters, "tags", state.tagFilters, "목적");
+  renderTagFilterGroup(el.tagFilters2, "tags2", state.tagFilters2, "특수기능");
 }
 
 function renderTypeFilters() {
@@ -243,6 +262,9 @@ function getFilteredSortedBags() {
   }
   if (state.tagFilters.size > 0) {
     list = list.filter(({ bag }) => (bag.tags || []).some(t => state.tagFilters.has(t)));
+  }
+  if (state.tagFilters2.size > 0) {
+    list = list.filter(({ bag }) => (bag.tags2 || []).some(t => state.tagFilters2.has(t)));
   }
   if (state.searchText.trim()) {
     const q = state.searchText.trim().toLowerCase();
@@ -355,18 +377,29 @@ function applyExtensionCount() {
     (state.extCount > 0 ? ` (확장권 ${state.extCount}장 사용)` : "");
 }
 
-function initGridControls() {
-  el.extInput.value = state.extCount;
-  applyExtensionCount();
+function renderExtButtons() {
+  el.extButtons.innerHTML = "";
+  for (let n = 0; n <= INVENTORY_MAX_EXTENSIONS; n++) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ext-btn" + (state.extCount === n ? " active" : "");
+    btn.textContent = n + "장";
+    btn.title = n === 0 ? "확장권 미사용" : `확장권 ${n}장 사용`;
+    btn.addEventListener("click", () => {
+      state.extCount = n;
+      renderExtButtons();
+      applyExtensionCount();
+      pruneOutOfBoundsPlacements();
+      renderGrid();
+      saveState();
+    });
+    el.extButtons.appendChild(btn);
+  }
+}
 
-  el.extInput.addEventListener("change", () => {
-    state.extCount = clamp(parseInt(el.extInput.value, 10) || 0, 0, INVENTORY_MAX_EXTENSIONS);
-    el.extInput.value = state.extCount;
-    applyExtensionCount();
-    pruneOutOfBoundsPlacements();
-    renderGrid();
-    saveState();
-  });
+function initGridControls() {
+  renderExtButtons();
+  applyExtensionCount();
 
   el.clearBtn.addEventListener("click", clearAllPlacements);
   document.getElementById("titlebar-close-btn").addEventListener("click", clearAllPlacements);
@@ -668,7 +701,7 @@ function restoreState() {
   if (!saved) return;
 
   state.extCount = clamp(saved.extCount || 0, 0, INVENTORY_MAX_EXTENSIONS);
-  el.extInput.value = state.extCount;
+  renderExtButtons();
   applyExtensionCount();
 
   (saved.placements || []).forEach(sp => {
@@ -713,11 +746,52 @@ const themeEl = {
 
 let currentThemeName = null;
 
+/* ------ 색상 유틸: 테마 밝기에 따라 글자색을 자동으로 밝게/어둡게 계산 ------ */
+
+function hexToRgb(hex) {
+  let h = hex.replace("#", "");
+  if (h.length === 3) h = h.split("").map(c => c + c).join("");
+  const num = parseInt(h, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+function relLuminance(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255; // 0(어두움) ~ 1(밝음)
+}
+
+function mixHex(hexA, hexB, t) {
+  const a = hexToRgb(hexA), b = hexToRgb(hexB);
+  const r = Math.round(a.r + (b.r - a.r) * t);
+  const g = Math.round(a.g + (b.g - a.g) * t);
+  const bl = Math.round(a.b + (b.b - a.b) * t);
+  return "#" + [r, g, bl].map(v => v.toString(16).padStart(2, "0")).join("");
+}
+
+// 패널 배경(외곽선 55% + 배경 45% 근사치)의 밝기를 기준으로 밝은 테마인지 판단하고,
+// 밝은 테마면 어두운 글자를, 어두운 테마면 밝은 글자를 자동으로 계산합니다.
+function applyContrastColors(theme) {
+  const panelApprox = mixHex(theme.outline, theme.bg, 0.45);
+  const isLight = relLuminance(panelApprox) > 0.55;
+
+  const textPrimary = isLight ? "#241a10" : "#f3ead4";
+  const textMuted = mixHex(textPrimary, panelApprox, 0.4);
+  const accent = isLight ? mixHex(theme.outline, "#000000", 0.32) : mixHex(theme.outline, "#ffffff", 0.45);
+  const accentBright = isLight ? mixHex(theme.outline, "#000000", 0.55) : mixHex(theme.outline, "#ffffff", 0.72);
+
+  const root = document.documentElement.style;
+  root.setProperty("--text-light", textPrimary);
+  root.setProperty("--text-muted", textMuted);
+  root.setProperty("--gold", accent);
+  root.setProperty("--gold-bright", accentBright);
+}
+
 function applyTheme(theme) {
   document.documentElement.style.setProperty("--theme-outline", theme.outline);
   document.documentElement.style.setProperty("--theme-shadow", theme.shadow);
   document.documentElement.style.setProperty("--theme-inner", theme.inner);
   document.documentElement.style.setProperty("--theme-bg", theme.bg);
+  applyContrastColors(theme);
   themeEl.outline.value = theme.outline;
   themeEl.shadow.value = theme.shadow;
   themeEl.inner.value = theme.inner;
