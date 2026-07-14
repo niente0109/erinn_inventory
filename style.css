@@ -318,6 +318,10 @@ body {
 }
 
 .catalog-panel, .board-panel {
+  /* CSS Grid 아이템은 기본적으로 min-width:auto라서, 안의 내용(긴 가방 이름 등)이
+     줄어들길 거부하면 트랙 자체가 뷰포트 밖으로 넓어져버립니다(그리드의 대표적인 함정).
+     min-width:0으로 그 제한을 풀어야 내용이 카드 안에서 잘리고 페이지 전체 가로 스크롤이 안 생깁니다. */
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--border-mid);
   border-radius: 10px;
