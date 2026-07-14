@@ -63,44 +63,45 @@
 
   <main class="board-panel">
     <div class="board-toolbar">
-      <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
-      <div class="ext-control">
-        <span class="ext-label">인벤토리 확장권</span>
-        <div id="ext-buttons" class="ext-buttons"></div>
+      <div class="toolbar-info">
+        <div class="ext-control">
+          <span class="ext-label">인벤토리 확장권</span>
+          <div id="ext-buttons" class="ext-buttons"></div>
+        </div>
+        <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
       </div>
-      <button id="clear-btn" class="danger-btn">전체 초기화</button>
+      <div class="toolbar-actions">
+        <button id="clear-btn" class="danger-btn">전체 초기화</button>
+        <div class="summary-panel">
+          <div class="summary-item">
+            <span class="summary-label">배치된 가방</span>
+            <span id="summary-count" class="summary-value">0개</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-label">사용 중인 인벤토리 칸</span>
+            <span id="summary-cells" class="summary-value">0 / 0</span>
+          </div>
+          <div class="summary-item highlight">
+            <span class="summary-label">총 내부 용량 합계</span>
+            <span id="summary-capacity" class="summary-value">0칸</span>
+          </div>
+        </div>
+      </div>
     </div>
     <p id="place-message" class="place-message"></p>
 
-    <div class="board-body">
-      <div class="board-window">
-        <div class="board-titlebar">
-          <!-- 여기에 직접 만드실 인벤토리 아이콘을 넣으세요. 예: <img src="img/inventory_icon.png" alt=""> -->
-          <span class="titlebar-icon" id="titlebar-icon" title="소지품">🎒</span>
-          <span class="titlebar-label">소지품</span>
-          <span class="titlebar-window-controls">
-            <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
-            <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
-          </span>
-        </div>
-        <div class="board-wrapper">
-          <div id="grid" class="grid"></div>
-        </div>
+    <div class="board-window">
+      <div class="board-titlebar">
+        <!-- 여기에 직접 만드실 인벤토리 아이콘을 넣으세요. 예: <img src="img/inventory_icon.png" alt=""> -->
+        <span class="titlebar-icon" id="titlebar-icon" title="소지품">🎒</span>
+        <span class="titlebar-label">소지품</span>
+        <span class="titlebar-window-controls">
+          <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
+          <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
+        </span>
       </div>
-
-      <div class="summary-panel">
-        <div class="summary-item">
-          <span class="summary-label">배치된 가방</span>
-          <span id="summary-count" class="summary-value">0개</span>
-        </div>
-        <div class="summary-item">
-          <span class="summary-label">사용 중인 인벤토리 칸</span>
-          <span id="summary-cells" class="summary-value">0 / 0</span>
-        </div>
-        <div class="summary-item highlight">
-          <span class="summary-label">총 내부 용량 합계</span>
-          <span id="summary-capacity" class="summary-value">0칸</span>
-        </div>
+      <div class="board-wrapper">
+        <div id="grid" class="grid"></div>
       </div>
     </div>
   </main>

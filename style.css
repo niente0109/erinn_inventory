@@ -477,10 +477,24 @@ body {
 
 .board-toolbar {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   flex-wrap: wrap;
-  align-items: center;
   gap: 14px;
   margin-bottom: 6px;
+}
+
+.toolbar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toolbar-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
 }
 
 .grid-size-info {
@@ -528,7 +542,7 @@ body {
   gap: 4px;
 }
 .ext-btn {
-  width: 30px;
+  width: 40px;
   height: 28px;
   border-radius: 6px;
   background: var(--panel-raised);
@@ -547,7 +561,6 @@ body {
 }
 
 .danger-btn {
-  margin-left: auto;
   background: var(--danger);
   color: #fff;
   text-shadow: var(--text-outline);
@@ -582,6 +595,7 @@ body {
 }
 
 .board-window {
+  width: fit-content;
   border: 1px solid var(--border-mid);
   border-radius: 8px;
   overflow: hidden;
@@ -614,13 +628,13 @@ body {
   gap: 5px;
 }
 .titlebar-window-btn {
-  width: 18px;
-  height: 16px;
-  border-radius: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 4px;
   background: rgba(0,0,0,0.18);
   border: 1px solid rgba(0,0,0,0.25);
   color: var(--ink);
-  font-size: 9px;
+  font-size: 8px;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -716,18 +730,6 @@ body {
 .drag-preview.invalid {
   border-color: var(--danger-bright);
   background: rgba(168, 50, 50, 0.3);
-}
-
-.board-body {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 16px;
-  margin-top: 6px;
-}
-
-.board-window {
-  width: fit-content;
 }
 
 .summary-panel {

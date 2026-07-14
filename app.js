@@ -14,6 +14,10 @@ const CONFIG = {
   FALLBACK_URL: "data/bags.json",
 };
 
+// 이 목록에 있는 태그(목적/특수기능 둘 다 확인)가 붙은 가방은,
+// 서로 이름이 달라도 "그룹 전체에서 1개"만 배치할 수 있습니다. (예: "상점" 가방끼리는 종류 상관없이 1개만)
+const EXCLUSIVE_GROUP_TAGS = ["상점"];
+
 /* ========================================================================= */
 
 // 인벤토리 기본 크기와 확장권 규칙 (마비노기 기준: 기본 가로 6칸, 확장권 1장당 +1칸, 최대 3장까지 = 최대 가로 9칸)
@@ -296,13 +300,15 @@ function renderCatalog() {
   }
 
   list.forEach(({ bag, key }) => {
-    const alreadyPlaced = bag.unique && state.placements.some(p => p.bag.name === bag.name);
+    const uniqueBlocked = bag.unique && state.placements.some(p => p.bag.name === bag.name);
+    const conflictTag = exclusiveConflictTag(bag);
+    const disabled = uniqueBlocked || !!conflictTag;
 
     const card = document.createElement("div");
     card.className = "bag-card"
       + (state.selectedBagKey === key ? " selected" : "")
-      + (alreadyPlaced ? " disabled" : "");
-    card.draggable = !alreadyPlaced;
+      + (disabled ? " disabled" : "");
+    card.draggable = !disabled;
     card.dataset.key = key;
 
     const thumb = document.createElement("div");
@@ -336,11 +342,21 @@ function renderCatalog() {
       uniqueBadge.textContent = "중복불가";
       card.appendChild(uniqueBadge);
     }
+    exclusiveTagsOf(bag).forEach(tag => {
+      const groupBadge = document.createElement("span");
+      groupBadge.className = "unique-badge";
+      groupBadge.textContent = `${tag} 1개 제한`;
+      card.appendChild(groupBadge);
+    });
     card.appendChild(badge);
 
     card.addEventListener("click", () => {
-      if (alreadyPlaced) {
+      if (uniqueBlocked) {
         showMessage(`"${bag.name}"은(는) 중복 소지가 불가능해서 이미 배치된 것 외에는 추가할 수 없어요.`);
+        return;
+      }
+      if (conflictTag) {
+        showMessage(`"${conflictTag}" 태그가 붙은 가방은 종류가 달라도 한 번에 하나만 배치할 수 있어요.`);
         return;
       }
       state.selectedBagKey = (state.selectedBagKey === key) ? null : key;
@@ -348,7 +364,7 @@ function renderCatalog() {
     });
 
     card.addEventListener("dragstart", (e) => {
-      if (alreadyPlaced) { e.preventDefault(); return; }
+      if (disabled) { e.preventDefault(); return; }
       e.dataTransfer.setData("text/plain", key);
       state.selectedBagKey = key;
     });
@@ -366,6 +382,26 @@ function escapeHtml(str) {
 function findBagByKey(key) {
   const idx = parseInt(key.split("__").pop(), 10);
   return state.bags[idx] || null;
+}
+
+// 이 가방이 가진 태그 중 "그룹당 1개 제한" 대상 태그만 뽑아줍니다.
+function exclusiveTagsOf(bag) {
+  const all = [...(bag.tags || []), ...(bag.tags2 || [])];
+  return all.filter(t => EXCLUSIVE_GROUP_TAGS.includes(t));
+}
+
+// 이 가방을 새로 배치하려 할 때, 이미 배치된 다른 가방 중 같은 "그룹당 1개 제한" 태그를
+// 가진 게 있으면 그 태그 이름을 돌려주고, 없으면 null을 돌려줍니다. (ignoreId: 자기 자신 제외)
+function exclusiveConflictTag(bag, ignoreId) {
+  const mine = exclusiveTagsOf(bag);
+  if (mine.length === 0) return null;
+  for (const p of state.placements) {
+    if (p.id === ignoreId) continue;
+    const other = exclusiveTagsOf(p.bag);
+    const shared = mine.find(t => other.includes(t));
+    if (shared) return shared;
+  }
+  return null;
 }
 
 /* -------------------------------- 그리드 -------------------------------- */
@@ -649,6 +685,11 @@ function clearDragPreview() {
 function tryPlaceBag(bag, x, y) {
   if (bag.unique && state.placements.some(p => p.bag.name === bag.name)) {
     showMessage(`"${bag.name}"은(는) 중복 소지가 불가능한 가방이라 1개만 배치할 수 있어요.`);
+    return false;
+  }
+  const conflictTag = exclusiveConflictTag(bag);
+  if (conflictTag) {
+    showMessage(`"${conflictTag}" 태그가 붙은 가방은 종류가 달라도 한 번에 하나만 배치할 수 있어요.`);
     return false;
   }
   if (!cellFree(x, y, bag.out_w, bag.out_h)) {
