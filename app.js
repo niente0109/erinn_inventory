@@ -437,7 +437,6 @@ function initGridControls() {
   renderExtButtons();
   applyExtensionCount();
 
-  el.clearBtn.addEventListener("click", clearAllPlacements);
   document.getElementById("titlebar-close-btn").addEventListener("click", clearAllPlacements);
 
   const minimizeBtn = document.getElementById("titlebar-minimize-btn");
