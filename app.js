@@ -52,7 +52,6 @@ const el = {
   extButtons: document.getElementById("ext-buttons"),
   gridSizeLabel: document.getElementById("grid-size-label"),
   placeMessage: document.getElementById("place-message"),
-  clearBtn: document.getElementById("clear-btn"),
   grid: document.getElementById("grid"),
   summaryCount: document.getElementById("summary-count"),
   summaryCells: document.getElementById("summary-cells"),
