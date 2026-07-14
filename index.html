@@ -57,12 +57,25 @@
         <option value="in-asc">내부 용량 작은 순</option>
       </select>
     </div>
-    <p class="hint">카드를 그리드로 드래그하거나, 카드를 탭한 뒤 그리드 칸을 탭해서 배치하세요. 이미 놓인 가방은 그대로 드래그하면 위치를 옮길 수 있어요.</p>
+    <p class="hint">가방을 소지품창으로 드래그하거나,</br>클릭한 후 소지품창을 클릭해서 배치하세요.</br>배치한 가방은 드래그하면 위치를 옮길 수 있어요.</p>
     <div id="catalog-list" class="catalog-list"></div>
   </aside>
 
   <main class="board-panel">
     <div class="board-toolbar">
+		<div class="board-window">
+		  <div class="board-titlebar">
+			<img src="img/icon.png" alt="">
+			<span class="titlebar-label">소지품</span>
+			<span class="titlebar-window-controls">
+			  <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
+			  <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
+			</span>
+		  </div>
+		  <div class="board-wrapper">
+			<div id="grid" class="grid"></div>
+		  </div>
+		</div>
       <div class="toolbar-info">
         <div class="ext-control">
           <span class="ext-label">인벤토리 확장권</span>
@@ -70,22 +83,8 @@
         </div>
         <div class="grid-size-info">현재 인벤토리 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
       </div>
-      <div class="board-window">
-        <div class="board-titlebar">
-          <img src="img/icon.png" alt="">
-          <span class="titlebar-label">소지품</span>
-          <span class="titlebar-window-controls">
-            <button type="button" class="titlebar-window-btn" id="titlebar-minimize-btn" title="최소화" aria-label="최소화">─</button>
-            <button type="button" class="titlebar-window-btn" id="titlebar-close-btn" title="전체 초기화" aria-label="전체 초기화">✕</button>
-          </span>
-        </div>
-        <div class="board-wrapper">
-          <div id="grid" class="grid"></div>
-        </div>
-      </div>      
       <div class="toolbar-actions">
-        <button id="clear-btn" class="danger-btn">전체 초기화</button>
-        <div class="summary-panel">
+	  <div class="summary-panel">
           <div class="summary-item">
             <span class="summary-label">배치된 가방</span>
             <span id="summary-count" class="summary-value">0개</span>
