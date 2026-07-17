@@ -501,6 +501,7 @@ function renderGrid() {
 function makePlacedBagEl(p) {
   const div = document.createElement("div");
   div.className = "placed-bag" + (p.bag.image_url ? " has-image" : "");
+  div.dataset.placementId = p.id;
   div.style.gridColumn = `${p.x + 1} / span ${p.bag.out_w}`;
   div.style.gridRow = `${p.y + 1} / span ${p.bag.out_h}`;
   div.style.background = typeColor(p.bag.type);
@@ -523,8 +524,16 @@ function makePlacedBagEl(p) {
     clearDragPreview();
   });
 
-  const removeBtn = document.createElement("span");
+  div.addEventListener("pointerdown", startTouchBagMove);
+  div.addEventListener("pointermove", updateTouchBagMove);
+  div.addEventListener("pointerup", finishTouchBagMove);
+  div.addEventListener("pointercancel", cancelTouchBagMove);
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
   removeBtn.className = "remove-btn";
+  removeBtn.setAttribute("aria-label", `${p.bag.name} 제거`);
+  removeBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
   removeBtn.textContent = "×";
   removeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -604,6 +613,63 @@ function setupExtraSpaces() {
 /* --------------------------- 배치 (드래그 & 클릭) --------------------------- */
 
 let dragPreviewEl = null;
+let touchMove = null;
+
+function startTouchBagMove(e) {
+  if (e.pointerType === "mouse" || e.button !== 0) return;
+  const placedBag = e.currentTarget;
+  const id = Number(placedBag.dataset.placementId);
+  const placement = state.placements.find(p => p.id === id);
+  if (!placement) return;
+  touchMove = { pointerId: e.pointerId, id, bag: placement.bag, startX: e.clientX, startY: e.clientY, active: false };
+  placedBag.setPointerCapture(e.pointerId);
+}
+
+function updateTouchBagMove(e) {
+  if (!touchMove || touchMove.pointerId !== e.pointerId) return;
+  const movedEnough = Math.hypot(e.clientX - touchMove.startX, e.clientY - touchMove.startY) > 6;
+  if (!touchMove.active && !movedEnough) return;
+  touchMove.active = true;
+  e.preventDefault();
+  if (!isPointerInsideGrid(e.clientX, e.clientY)) {
+    clearDragPreview();
+    return;
+  }
+  const { x, y } = pointerToCell(e.clientX, e.clientY, touchMove.bag.out_w, touchMove.bag.out_h);
+  showDragPreview(x, y, touchMove.bag, touchMove.id);
+}
+
+function finishTouchBagMove(e) {
+  if (!touchMove || touchMove.pointerId !== e.pointerId) return;
+  const move = touchMove;
+  touchMove = null;
+  clearDragPreview();
+  if (!move.active) return;
+  e.preventDefault();
+  if (!isPointerInsideGrid(e.clientX, e.clientY)) return;
+  const placement = state.placements.find(p => p.id === move.id);
+  if (!placement) return;
+  const { x, y } = pointerToCell(e.clientX, e.clientY, move.bag.out_w, move.bag.out_h);
+  if (cellFree(x, y, move.bag.out_w, move.bag.out_h, move.id)) {
+    placement.x = x;
+    placement.y = y;
+    renderGrid();
+    saveState();
+  } else {
+    showMessage("그 자리에 놓을 수 없어요.");
+  }
+}
+
+function cancelTouchBagMove(e) {
+  if (!touchMove || touchMove.pointerId !== e.pointerId) return;
+  touchMove = null;
+  clearDragPreview();
+}
+
+function isPointerInsideGrid(clientX, clientY) {
+  const rect = el.grid.getBoundingClientRect();
+  return clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
+}
 let draggingMove = null; // 기존 배치를 옮기는 중일 때 { id, bag }
 
 function setupGridInteractions() {
@@ -1014,10 +1080,20 @@ function setupSettingsPanel() {
 
   btn.addEventListener("click", () => setOpen(!panel.classList.contains("open")));
 
+  // Selecting a preset re-renders its button list. Stop that click here so the
+  // document-level outside-click handler never mistakes it for an outside click.
+  panel.addEventListener("click", (e) => e.stopPropagation());
+
   document.addEventListener("click", (e) => {
     if (!panel.classList.contains("open")) return;
     if (panel.contains(e.target) || btn.contains(e.target)) return;
     setOpen(false);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || !panel.classList.contains("open")) return;
+    setOpen(false);
+    btn.focus();
   });
 }
 
