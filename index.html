@@ -81,6 +81,26 @@
           <div id="ext-buttons" class="ext-buttons"></div>
         </div>
         <div class="grid-size-info">현재 소지품창 크기: <strong id="grid-size-label">6 × 10칸</strong></div>
+
+        <div class="extra-spaces">
+          <span class="extra-spaces-label">추가 공간 포함</span>
+          <label class="extra-checkbox" title="프리미엄 베이직/콤비네이션 멤버십">
+            <input type="checkbox" id="extra-plus"> Plus 인벤토리
+          </label>
+          <label class="extra-checkbox" title="소울스트림의 보관함">
+            <input type="checkbox" id="extra-soulstream"> 소울스트림
+          </label>
+          <label class="extra-checkbox extra-suboption hidden" id="extra-soulstream-sub-wrap" title="이벤트로 확장권을 받은 경우 체크하세요">
+            <input type="checkbox" id="extra-soulstream-ext"> 확장권 적용 (20×16)
+          </label>
+          <label class="extra-checkbox" title="프리시즌 보관함">
+            <input type="checkbox" id="extra-extra"> 추가 보관함
+          </label>
+          <label class="extra-checkbox" title="PC방 인벤토리">
+            <input type="checkbox" id="extra-pcbang"> PC방 인벤토리
+          </label>
+        </div>
+
 		<div class="summary-panel">
           <div class="summary-item">
             <span class="summary-label">배치된 가방</span>
@@ -90,9 +110,13 @@
             <span class="summary-label">사용 중인 칸</span>
             <span id="summary-cells" class="summary-value">0 / 0</span>
           </div>
-          <div class="summary-item highlight">
-            <span class="summary-label">총 용량 합계</span>
+          <div class="summary-item">
+            <span class="summary-label">가방 용량 합계</span>
             <span id="summary-capacity" class="summary-value">0칸</span>
+          </div>
+          <div class="summary-item highlight">
+            <span class="summary-label">전체 총합 (가방+추가공간)</span>
+            <span id="summary-grand-total" class="summary-value">0칸</span>
           </div>
         </div>
       </div>

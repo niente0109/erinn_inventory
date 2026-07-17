@@ -532,6 +532,38 @@ body {
   font-family: var(--font-display);
 }
 
+.extra-spaces {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: var(--panel-raised);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+.extra-spaces-label {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.extra-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-light);
+  cursor: pointer;
+}
+.extra-checkbox input[type="checkbox"] {
+  accent-color: var(--gold);
+  cursor: pointer;
+}
+.extra-checkbox.extra-suboption {
+  margin-left: 18px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
 .place-message {
   min-height: 1.2em;
   font-size: 0.8rem;

@@ -56,6 +56,7 @@ const el = {
   summaryCount: document.getElementById("summary-count"),
   summaryCells: document.getElementById("summary-cells"),
   summaryCapacity: document.getElementById("summary-capacity"),
+  summaryGrandTotal: document.getElementById("summary-grand-total"),
 };
 
 /* ---------------------------- 데이터 불러오기 ---------------------------- */
@@ -555,10 +556,49 @@ function renderSummary() {
   const count = state.placements.length;
   const occupied = state.placements.reduce((s, p) => s + p.bag.out_w * p.bag.out_h, 0);
   const capacity = state.placements.reduce((s, p) => s + p.bag.in_w * p.bag.in_h, 0);
+  const extra = extraSpacesTotal();
 
   el.summaryCount.textContent = `${count}개`;
   el.summaryCells.textContent = `${occupied} / ${state.cols * state.rows}`;
   el.summaryCapacity.textContent = `${capacity.toLocaleString()}칸`;
+  el.summaryGrandTotal.textContent = `${(capacity + extra).toLocaleString()}칸`;
+}
+
+/* ------------------------------ 추가 공간(체크박스) ------------------------------ */
+
+// Plus 인벤토리는 기본 소지품창과 크기·확장 규칙이 완전히 같아서, 지금 계산된
+// state.cols/state.rows(확장권 반영값)를 그대로 재사용합니다.
+// 소울스트림/추가 보관함/PC방 인벤토리는 20×15 고정이며, 소울스트림만 이벤트로
+// 확장권을 받아 20×16이 된 경우가 있어 별도 체크박스로 예외를 둡니다.
+const extraSpaceEl = {
+  plus: document.getElementById("extra-plus"),
+  soulstream: document.getElementById("extra-soulstream"),
+  soulstreamSubWrap: document.getElementById("extra-soulstream-sub-wrap"),
+  soulstreamExt: document.getElementById("extra-soulstream-ext"),
+  extra: document.getElementById("extra-extra"),
+  pcbang: document.getElementById("extra-pcbang"),
+};
+
+function extraSpacesTotal() {
+  let total = 0;
+  if (extraSpaceEl.plus.checked) total += state.cols * state.rows;
+  if (extraSpaceEl.soulstream.checked) {
+    total += extraSpaceEl.soulstreamExt.checked ? 20 * 16 : 20 * 15;
+  }
+  if (extraSpaceEl.extra.checked) total += 20 * 15;
+  if (extraSpaceEl.pcbang.checked) total += 20 * 15;
+  return total;
+}
+
+function setupExtraSpaces() {
+  const onChange = () => {
+    extraSpaceEl.soulstreamSubWrap.classList.toggle("hidden", !extraSpaceEl.soulstream.checked);
+    renderSummary();
+    saveState();
+  };
+  Object.values(extraSpaceEl).forEach(el => {
+    if (el.type === "checkbox") el.addEventListener("change", onChange);
+  });
 }
 
 /* --------------------------- 배치 (드래그 & 클릭) --------------------------- */
@@ -727,6 +767,13 @@ function saveState() {
     const data = {
       extCount: state.extCount,
       placements: state.placements.map(p => ({ name: p.bag.name, x: p.x, y: p.y })),
+      extraSpaces: {
+        plus: extraSpaceEl.plus.checked,
+        soulstream: extraSpaceEl.soulstream.checked,
+        soulstreamExt: extraSpaceEl.soulstreamExt.checked,
+        extra: extraSpaceEl.extra.checked,
+        pcbang: extraSpaceEl.pcbang.checked,
+      },
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch (e) { /* 무시 */ }
@@ -750,6 +797,14 @@ function restoreState() {
       state.placements.push({ id: state.nextId++, bag, x: sp.x, y: sp.y });
     }
   });
+
+  const es = saved.extraSpaces || {};
+  extraSpaceEl.plus.checked = !!es.plus;
+  extraSpaceEl.soulstream.checked = !!es.soulstream;
+  extraSpaceEl.soulstreamExt.checked = !!es.soulstreamExt;
+  extraSpaceEl.extra.checked = !!es.extra;
+  extraSpaceEl.pcbang.checked = !!es.pcbang;
+  extraSpaceEl.soulstreamSubWrap.classList.toggle("hidden", !extraSpaceEl.soulstream.checked);
 }
 
 /* ------------------------------ 설정 패널: 색상 팔레트 ------------------------------ */
@@ -974,6 +1029,7 @@ async function init() {
   setupFontControls();
   initGridControls();
   setupGridInteractions();
+  setupExtraSpaces();
 
   el.search.addEventListener("input", () => {
     state.searchText = el.search.value;
