@@ -400,6 +400,14 @@ body {
   padding-right: 4px;
 }
 
+@media (max-width: 820px) {
+  .catalog-list {
+    height: clamp(10rem, 28svh, 17rem);
+    max-height: none;
+    overflow-y: auto;
+  }
+}
+
 .catalog-list::-webkit-scrollbar { width: 8px; }
 .catalog-list::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 4px; }
 
